@@ -7,8 +7,9 @@ import {
   yearFiltersFromHash, yearHash, type YearFilters, type YearMetric,
 } from '../../analytics/date-range'
 import {
-  annualMetricValue, formatAnnualMetric, YEAR_METRIC_LABELS,
+  annualMetricValue, formatAnnualMetric, yearMetricLabelKey,
 } from '../../analytics/year-metric'
+import { useT, type TranslateFn } from '../../i18n'
 import { useYearData } from '../../year-data'
 import { DeviceSelector } from '../DeviceSelector'
 import { ReadFeedback } from '../ReadFeedback'
@@ -31,20 +32,32 @@ function peakFor(stats: YearStatsResponse, metric: YearMetric) {
   }, { date: '', value: 0 })
 }
 
-function yearSummaryCards(stats: YearStatsResponse, metric: YearMetric) {
+function yearSummaryCards(stats: YearStatsResponse, metric: YearMetric, t: TranslateFn) {
   const peak = peakFor(stats, metric)
   const incomplete = hasIncompleteCost(stats.totals.pricing_coverage)
+  const metricLabel = t(yearMetricLabelKey(metric))
+  const numberLocale = typeof document !== 'undefined' && document.documentElement.lang.startsWith('zh')
+    ? 'zh-CN' : 'en-US'
   const secondary = metric === 'cost'
-    ? { label: '真实 Tokens', value: stats.totals.real_total_tokens.toLocaleString('zh-CN') }
-    : { label: incomplete ? '全年已知花费' : '全年花费', value: `$${stats.totals.total_cost.toFixed(2)}` }
+    ? { label: t('year.realTokens'), value: stats.totals.real_total_tokens.toLocaleString(numberLocale) }
+    : {
+      label: incomplete ? t('year.yearKnownCost') : t('year.yearCost'),
+      value: `$${stats.totals.total_cost.toFixed(2)}`,
+    }
   return [
     {
-      label: metric === 'cost' && incomplete ? '全年已知花费' : `全年${YEAR_METRIC_LABELS[metric]}`,
+      label: metric === 'cost' && incomplete
+        ? t('year.yearKnownCost')
+        : t('year.yearMetric', { metric: metricLabel }),
       value: formatAnnualMetric(selectedTotal(stats, metric), metric), color: 'text-orange-400',
     },
-    { label: '活跃天数', value: `${stats.totals.active_days} 天`, color: 'text-blue-400' },
     {
-      label: `${YEAR_METRIC_LABELS[metric]}峰值日`,
+      label: t('year.activeDaysLabel'),
+      value: t('year.activeDays', { n: stats.totals.active_days }),
+      color: 'text-blue-400',
+    },
+    {
+      label: t('year.peakDay', { metric: metricLabel }),
       value: peak.date ? formatAnnualMetric(peak.value, metric) : '—',
       sub: peak.date || undefined, color: 'text-emerald-400',
     },
@@ -53,26 +66,28 @@ function yearSummaryCards(stats: YearStatsResponse, metric: YearMetric) {
 }
 
 function YearHeader({ onBack }: { onBack: () => void }) {
+  const t = useT()
   return <header className="mb-5 flex items-center justify-between border-b border-white/[0.06] pb-5">
     <button onClick={onBack} className="flex items-center gap-3 text-left">
       <img src="/icon-192.png" alt="" className="h-10 w-10 rounded-xl" />
-      <span><span className="block whitespace-nowrap text-base font-bold text-zinc-100 sm:text-lg">Tokember 年度</span>
+      <span><span className="block whitespace-nowrap text-base font-bold text-zinc-100 sm:text-lg">{t('year.title')}</span>
         <span className="block text-xs text-zinc-600">Annual Report</span></span>
     </button>
     <button onClick={onBack}
       className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-zinc-800 bg-zinc-900 text-zinc-500 transition hover:border-zinc-700 hover:text-zinc-200"
-      aria-label="返回仪表盘">
+      aria-label={t('year.backAria')}>
       <svg className="h-4.5 w-4.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M19 12H5" /><path d="M12 19l-7-7 7-7" /></svg>
     </button>
   </header>
 }
 
 function MetricTabs({ value, onChange }: { value: YearMetric; onChange: (value: YearMetric) => void }) {
-  return <div className="flex overflow-hidden rounded-lg border border-zinc-800" aria-label="年度指标">
+  const t = useT()
+  return <div className="flex overflow-hidden rounded-lg border border-zinc-800" aria-label={t('year.metricAria')}>
     {(['cost', 'tokens', 'calls'] as const).map(metric => <button type="button" key={metric}
       aria-pressed={value === metric} onClick={() => onChange(metric)}
       className={`px-3 py-2 text-sm ${value === metric ? 'bg-zinc-800 text-zinc-100' : 'text-zinc-500 hover:text-zinc-300'}`}>
-      {YEAR_METRIC_LABELS[metric]}
+      {t(yearMetricLabelKey(metric))}
     </button>)}
   </div>
 }
@@ -85,22 +100,23 @@ function YearControls({
   devices: DeviceOption[]
   onChange: (value: YearFilters) => void
 }) {
+  const t = useT()
   const choices = years.length ? years : [filters.year]
   return <section className="mb-6 flex flex-col gap-3 rounded-xl border border-white/[0.06] bg-white/[0.02] p-3 sm:flex-row sm:items-end">
     <label className="min-w-0 flex-1 text-xs text-zinc-500">
-      <span className="mb-1.5 block">设备</span>
+      <span className="mb-1.5 block">{t('year.device')}</span>
       <DeviceSelector devices={devices} value={filters.device}
         onChange={device => onChange({ ...filters, device })} />
     </label>
     <label className="text-xs text-zinc-500 sm:w-32">
-      <span className="mb-1.5 block">年份</span>
+      <span className="mb-1.5 block">{t('year.yearLabel')}</span>
       <select className="field-input" value={filters.year}
         onChange={event => onChange({ ...filters, year: Number(event.target.value) })}>
         {choices.map(year => <option key={year} value={year}>{year}</option>)}
       </select>
     </label>
     <label className="text-xs text-zinc-500">
-      <span className="mb-1.5 block">指标</span>
+      <span className="mb-1.5 block">{t('year.metricLabel')}</span>
       <MetricTabs value={filters.metric}
         onChange={metric => onChange({ ...filters, metric })} />
     </label>
@@ -108,7 +124,8 @@ function YearControls({
 }
 
 function YearReport({ filters, stats }: { filters: YearFilters; stats: YearStatsResponse }) {
-  const cards = yearSummaryCards(stats, filters.metric)
+  const t = useT()
+  const cards = yearSummaryCards(stats, filters.metric, t)
   return <div className="space-y-6">
     <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
       {cards.map(card => <div key={card.label}
@@ -130,6 +147,7 @@ interface Props {
 }
 
 export function YearPage({ onBack, devices, onRefreshDevices }: Props) {
+  const t = useT()
   const filters = yearFiltersFromHash(window.location.hash)
   const { state, refresh } = useYearData(API, filters.year, filters.device)
   const stats = state.data
@@ -153,11 +171,11 @@ export function YearPage({ onBack, devices, onRefreshDevices }: Props) {
       devices={devices.data ?? []} onChange={navigate} />
     {devices.status === 'error' || devices.status === 'stale' ? <ReadFeedback
       loading={false} hasData={devices.data != null} error={devices.error}
-      label="加载设备中…" onRetry={onRefreshDevices} /> : null}
+      label={t('common.loadingDevices')} onRetry={onRefreshDevices} /> : null}
     <ResourceView status={state.status} error={state.error}
-      empty={stats?.daily.length === 0} loadingLabel="加载年度数据…"
+      empty={stats?.daily.length === 0} loadingLabel={t('year.loadingYear')}
       emptyLabel={stats?.available_years.length
-        ? `${filters.year} 年暂无用量记录` : '当前设备还没有年度用量记录'}
+        ? t('year.emptyYear', { year: filters.year }) : t('year.noYearUsage')}
       onRetry={() => { refresh() }}>
       {stats ? <YearReport filters={filters} stats={stats} /> : null}
     </ResourceView>

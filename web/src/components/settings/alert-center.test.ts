@@ -3,23 +3,24 @@ import test from 'node:test'
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import type { AlertCenterResponse } from '@tokember/contracts/alerts'
+import { withLocale } from '../../test-utils'
 import { AlertCenterContent, evidenceLines } from './AlertCenterPanel'
 import { SETTINGS_MENU } from './SettingsSidebar'
 
 const center: AlertCenterResponse = {
   webhook_configured: false,
   rules: [{
-    id: 1, name: '每日预算', kind: 'budget', device_id: null, provider: null,
+    id: 1, name: 'Daily budget', kind: 'budget', device_id: null, provider: null,
     timezone: 'Asia/Shanghai', enabled: true, cooldown_minutes: 60,
     notify_webhook: true, config: { period: 'day', metric: 'cost', limit: 10 },
     created_at: '2026-07-17T00:00:00.000Z', updated_at: '2026-07-17T00:00:00.000Z',
     evaluation: {
       rule_id: 1, evaluated_at: '2026-07-17T04:00:00.000Z',
-      status: 'triggered', reason: '预算已达到 80%', evidence: null,
+      status: 'triggered', reason: 'Budget reached 80%', evidence: null,
     },
   }],
   events: [{
-    id: 1, rule_id: 1, rule_name: '每日预算', kind: 'budget',
+    id: 1, rule_id: 1, rule_name: 'Daily budget', kind: 'budget',
     device_id: null, provider: null, dedup_key: 'rule:1:budget',
     status: 'active', severity: 'warning',
     first_triggered_at: '2026-07-17T03:00:00.000Z',
@@ -36,15 +37,15 @@ const center: AlertCenterResponse = {
 }
 
 test('alert center renders explainable admin-only evidence and enabled menu', () => {
-  const html = renderToStaticMarkup(createElement(AlertCenterContent, {
+  const html = renderToStaticMarkup(withLocale(createElement(AlertCenterContent, {
     data: { center, devices: [] }, busy: false,
     onEdit: () => {}, onToggle: () => {}, onCreate: () => {}, onAcknowledge: () => {},
-  }))
-  assert.match(html, /每日预算/)
-  assert.match(html, /成本预测不完整/)
-  assert.match(html, /确认/)
-  assert.match(html, /未配置/)
+  })))
+  assert.match(html, /Daily budget/)
+  assert.match(html, /Incomplete cost forecast/)
+  assert.match(html, /Acknowledge/)
+  assert.match(html, /Not configured/)
   assert.doesNotMatch(html, /secret|webhook.*https:/i)
   assert.equal(SETTINGS_MENU.find(item => item.id === 'alerts')?.enabled, true)
-  assert.match(evidenceLines(center.events[0]).join(' '), /预测 \$16\.00/)
+  assert.match(evidenceLines(center.events[0]).join(' '), /Forecast \$16\.00/)
 })

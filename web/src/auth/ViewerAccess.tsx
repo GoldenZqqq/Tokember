@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import type { ViewerAccessState } from './use-viewer-access'
+import { LanguageSwitch, useT } from '../i18n'
 
 interface ViewerAccessProps {
   state: ViewerAccessState
@@ -9,6 +10,7 @@ interface ViewerAccessProps {
 }
 
 export function ViewerAccess(props: ViewerAccessProps) {
+  const t = useT()
   const [password, setPassword] = useState('')
   const [submitting, setSubmitting] = useState(false)
   async function submit(event: FormEvent) {
@@ -16,23 +18,26 @@ export function ViewerAccess(props: ViewerAccessProps) {
     setSubmitting(true)
     try { await props.onLogin(password) } finally { setSubmitting(false) }
   }
-  if (props.state.status === 'checking') return <StatusCard text="正在检查查看权限…" />
+  if (props.state.status === 'checking') return <StatusCard text={t('viewer.checking')} />
   if (props.state.status === 'error') return <StatusCard
-    text={props.state.error.message} action="重试" onAction={props.onRetry} />
+    text={props.state.error.message} action={t('common.retry')} onAction={props.onRetry} />
   return <div className="mx-auto flex min-h-[75vh] max-w-md items-center px-4">
     <form onSubmit={submit} className="w-full rounded-2xl border border-orange-500/15 bg-zinc-900/90 p-6 shadow-2xl">
-      <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-xl bg-orange-500/10 text-orange-400" aria-hidden="true">◉</div>
-      <h1 className="text-2xl font-bold text-zinc-100">查看 Tokember</h1>
-      <p className="mt-2 text-sm leading-relaxed text-zinc-500">输入查看密码以访问用量 Dashboard 与年度分析。</p>
-      <label className="mt-6 block text-xs font-medium text-zinc-400" htmlFor="viewer-password">查看密码</label>
+      <div className="mb-5 flex items-start justify-between gap-3">
+        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-orange-500/10 text-orange-400" aria-hidden="true">◉</div>
+        <LanguageSwitch />
+      </div>
+      <h1 className="text-2xl font-bold text-zinc-100">{t('viewer.title')}</h1>
+      <p className="mt-2 text-sm leading-relaxed text-zinc-500">{t('viewer.body')}</p>
+      <label className="mt-6 block text-xs font-medium text-zinc-400" htmlFor="viewer-password">{t('viewer.password')}</label>
       <input id="viewer-password" type="password" autoComplete="current-password"
         value={password} onChange={event => setPassword(event.target.value)} required
         className="mt-2 w-full rounded-lg border border-white/10 bg-zinc-950/70 px-3 py-2.5 text-sm text-zinc-100 outline-none focus:border-orange-500/60 focus:ring-2 focus:ring-orange-500/15" />
       {props.state.error ? <p className="mt-3 text-sm text-red-400">{props.state.error.message}</p> : null}
       <button disabled={submitting} className="mt-5 w-full rounded-lg bg-orange-500 px-4 py-2.5 text-sm font-semibold text-zinc-950 hover:bg-orange-400 disabled:opacity-60">
-        {submitting ? '登录中…' : '进入 Dashboard'}
+        {submitting ? t('viewer.signingIn') : t('viewer.enter')}
       </button>
-      <button type="button" onClick={props.onSettings} className="mt-3 w-full text-xs text-zinc-500 hover:text-zinc-300">管理员设置</button>
+      <button type="button" onClick={props.onSettings} className="mt-3 w-full text-xs text-zinc-500 hover:text-zinc-300">{t('viewer.adminSettings')}</button>
     </form>
   </div>
 }

@@ -618,15 +618,16 @@ test('Docker and optional private deploy share the root-locked release staging p
   }
 })
 
-test('public CI matrix is separate from production deploy and covers three OSes', async () => {
+test('public CI is Linux-only and separate from production deploy', async () => {
   const ci = await readFile(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8')
   const deploy = await readOptionalFile(new URL('../.github/workflows/deploy.yml', import.meta.url))
 
   assert.match(ci, /^name:\s*CI\s*$/m)
   assert.match(ci, /pull_request:/)
   assert.match(ci, /ubuntu-latest/)
-  assert.match(ci, /windows-latest/)
-  assert.match(ci, /macos-latest/)
+  // Private-repo Actions minutes: win×2 / mac×10. Default CI stays Linux-only.
+  assert.doesNotMatch(ci, /windows-latest/)
+  assert.doesNotMatch(ci, /macos-latest/)
   assert.match(ci, /npm run typecheck/)
   assert.match(ci, /npm test/)
   assert.match(ci, /npm run build/)
@@ -642,6 +643,7 @@ test('public CI matrix is separate from production deploy and covers three OSes'
   if (deploy) {
     assert.match(deploy, /^name:\s*Deploy production\s*$/m)
     assert.doesNotMatch(deploy, /pull_request:/)
+    assert.match(deploy, /cancel-in-progress:\s*true/)
   }
 })
 
@@ -786,6 +788,7 @@ test('public release workflow packages collector and stays off production deploy
   assert.match(release, /^name:\s*Release\s*$/m)
   assert.match(release, /package-collector-release\.mjs/)
   assert.match(release, /package-image-manifest\.mjs/)
+  assert.doesNotMatch(release, /steps\.manifest\.outputs/)
   assert.match(release, /linux\/amd64,linux\/arm64|linux\/amd64/)
   assert.match(release, /linux\/arm64/)
   assert.match(release, /softprops\/action-gh-release/)

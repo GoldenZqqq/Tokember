@@ -6,33 +6,34 @@ import {
   writeBurnPreference,
   type BurnPreference,
 } from '../../burn/burn-preference'
+import { useT, type TranslateFn } from '../../i18n'
 import { ReadFeedback } from '../ReadFeedback'
 
-function formatRelative(value: string | null): string {
-  if (!value) return '从未上报'
+function formatRelative(value: string | null, t: TranslateFn): string {
+  if (!value) return t('relative.never')
   const normalized = value.includes('T') ? value : value.replace(' ', 'T') + 'Z'
   const time = new Date(normalized).getTime()
-  if (!Number.isFinite(time)) return '未知'
+  if (!Number.isFinite(time)) return t('common.unknown')
   const seconds = Math.max(0, Math.round((Date.now() - time) / 1000))
-  if (seconds < 60) return `${seconds} 秒前`
+  if (seconds < 60) return t('relative.secondsAgo', { n: seconds })
   const minutes = Math.round(seconds / 60)
-  if (minutes < 60) return `${minutes} 分钟前`
+  if (minutes < 60) return t('relative.minutesAgo', { n: minutes })
   const hours = Math.round(minutes / 60)
-  if (hours < 24) return `${hours} 小时前`
-  return `${Math.round(hours / 24)} 天前`
+  if (hours < 24) return t('relative.hoursAgo', { n: hours })
+  return t('relative.daysAgo', { n: Math.round(hours / 24) })
 }
 
-function formatUptime(startedAt: string): string {
+function formatUptime(startedAt: string, t: TranslateFn): string {
   const started = new Date(startedAt).getTime()
   if (!Number.isFinite(started)) return '—'
   const seconds = Math.max(0, Math.round((Date.now() - started) / 1000))
-  if (seconds < 60) return `${seconds} 秒`
+  if (seconds < 60) return t('relative.seconds', { n: seconds })
   const minutes = Math.floor(seconds / 60)
-  if (minutes < 60) return `${minutes} 分钟`
+  if (minutes < 60) return t('relative.minutes', { n: minutes })
   const hours = Math.floor(minutes / 60)
   const remMin = minutes % 60
-  if (hours < 48) return `${hours} 小时 ${remMin} 分`
-  return `${Math.floor(hours / 24)} 天 ${hours % 24} 小时`
+  if (hours < 48) return t('systemUi.uptimeHoursMin', { hours, min: remMin })
+  return t('systemUi.uptimeDaysHours', { days: Math.floor(hours / 24), hours: hours % 24 })
 }
 
 function shortHash(value: string): string {
@@ -45,15 +46,19 @@ const HEALTH_STYLES = {
   error: 'bg-red-500/10 text-red-300 border-red-500/20',
 } as const
 
-const HEALTH_LABELS = { ok: '健康', degraded: '降级', error: '异常' } as const
-const COLLECTOR_LABELS = {
-  healthy: '健康', degraded: '异常', offline: '离线', never: '待上报',
-} as const
+function healthLabel(status: keyof typeof HEALTH_STYLES, t: TranslateFn): string {
+  if (status === 'ok') return t('systemUi.healthOk')
+  if (status === 'degraded') return t('systemUi.healthDegraded')
+  return t('systemUi.healthError')
+}
 
-const RECOVERY_LABELS = {
-  never: '未建立', healthy: '正常', stale: '已陈旧',
-  backup_failed: '备份失败', drill_failed: '演练失败',
-} as const
+function collectorLabel(status: SystemInfo['devices'][number]['collector_status'], t: TranslateFn): string {
+  if (status === 'healthy') return t('health.healthy')
+  if (status === 'degraded') return t('health.degraded')
+  if (status === 'offline') return t('health.offline')
+  return t('health.never')
+}
+
 const RECOVERY_STYLES = {
   never: 'bg-zinc-500/10 text-zinc-400 border-zinc-500/20',
   healthy: HEALTH_STYLES.ok,
@@ -61,7 +66,20 @@ const RECOVERY_STYLES = {
   backup_failed: HEALTH_STYLES.error,
   drill_failed: HEALTH_STYLES.error,
 } as const
-const CHECK_LABELS = { never: '未执行', passed: '已通过', failed: '失败' } as const
+
+function recoveryLabel(state: keyof typeof RECOVERY_STYLES, t: TranslateFn): string {
+  if (state === 'never') return t('systemUi.recoveryNever')
+  if (state === 'healthy') return t('systemUi.recoveryHealthy')
+  if (state === 'stale') return t('systemUi.recoveryStale')
+  if (state === 'backup_failed') return t('systemUi.recoveryBackupFailed')
+  return t('systemUi.recoveryDrillFailed')
+}
+
+function checkLabel(state: 'never' | 'passed' | 'failed', t: TranslateFn): string {
+  if (state === 'never') return t('systemUi.checkNever')
+  if (state === 'passed') return t('systemUi.checkPassed')
+  return t('systemUi.checkFailed')
+}
 
 function StatCard({ label, value, hint }: { label: string; value: string; hint?: string }) {
   return (
@@ -74,25 +92,26 @@ function StatCard({ label, value, hint }: { label: string; value: string; hint?:
 }
 
 function PanelHeader({ info, refresh }: { info: SystemInfo; refresh: () => void }) {
+  const t = useT()
   return (
     <header className="flex flex-wrap items-start justify-between gap-3">
       <div>
         <p className="text-xs font-medium uppercase tracking-[0.18em] text-orange-400">System</p>
-        <h2 className="mt-2 text-2xl font-bold tracking-tight text-zinc-100">系统信息</h2>
+        <h2 className="mt-2 text-2xl font-bold tracking-tight text-zinc-100">{t('systemUi.title')}</h2>
         <p className="mt-2 max-w-2xl text-sm leading-relaxed text-zinc-500">
-          只读运行摘要：实际发布版本、数据库规模、计价状态分布与设备采集健康度。
+          {t('systemUi.subtitle')}
         </p>
       </div>
       <div className="flex items-center gap-2">
         <span className={`rounded-full border px-3 py-1 text-xs font-medium ${HEALTH_STYLES[info.health.status]}`}>
-          {HEALTH_LABELS[info.health.status]}
+          {healthLabel(info.health.status, t)}
         </span>
         <button
           type="button"
           onClick={refresh}
           className="rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-zinc-300 hover:bg-white/[0.07]"
         >
-          刷新
+          {t('common.refresh')}
         </button>
       </div>
     </header>
@@ -100,24 +119,25 @@ function PanelHeader({ info, refresh }: { info: SystemInfo; refresh: () => void 
 }
 
 function RuntimeCards({ info }: { info: SystemInfo }) {
+  const t = useT()
   const build = info.build
   return (
     <>
       <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <StatCard label="发布版本" value={build?.release_id ?? `v${info.version}`} hint={`v${info.version} · ${info.node_env}`} />
-        <StatCard label="运行时长" value={formatUptime(info.started_at)} hint={new Date(info.started_at).toLocaleString()} />
-        <StatCard label="数据库" value={info.db_path} hint={info.db_ok ? '可查询' : '查询失败'} />
-        <StatCard label="设备在线" value={`${info.health.online_devices}/${info.counts.devices}`} hint="按各采集器调度周期动态判定" />
+        <StatCard label={t('systemUi.release')} value={build?.release_id ?? `v${info.version}`} hint={`v${info.version} · ${info.node_env}`} />
+        <StatCard label={t('systemUi.uptime')} value={formatUptime(info.started_at, t)} hint={new Date(info.started_at).toLocaleString()} />
+        <StatCard label={t('systemUi.database')} value={info.db_path} hint={info.db_ok ? t('systemUi.dbOk') : t('systemUi.dbFail')} />
+        <StatCard label={t('systemUi.devicesOnline')} value={`${info.health.online_devices}/${info.counts.devices}`} hint={t('systemUi.devicesOnlineHint')} />
       </section>
       <section className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <StatCard label="Commit" value={shortHash(build?.commit ?? 'unknown')} />
         <StatCard label="Lockfile" value={shortHash(build?.lockfile_sha256 ?? 'unknown')} />
         <StatCard
-          label="构建时间"
+          label={t('systemUi.builtAt')}
           value={build ? new Date(build.built_at).toLocaleString() : '—'}
           hint={build
             ? `Build Node ${build.node_version} (${build.architecture ?? 'unknown'}) · Runtime Node ${info.runtime_node_version ?? 'unknown'} (${info.runtime_architecture ?? 'unknown'})`
-            : '旧版 Server 未提供构建元数据'}
+            : t('systemUi.oldServer')}
         />
       </section>
     </>
@@ -125,10 +145,11 @@ function RuntimeCards({ info }: { info: SystemInfo }) {
 }
 
 function PricingStatusSection({ rows }: { rows: SystemInfo['pricing_status'] }) {
+  const t = useT()
   return (
     <section className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
-      <h3 className="text-sm font-semibold text-zinc-200">计价状态分布</h3>
-      {!rows.length ? <p className="mt-3 text-sm text-zinc-600">暂无用量记录</p> : (
+      <h3 className="text-sm font-semibold text-zinc-200">{t('systemUi.pricingDist')}</h3>
+      {!rows.length ? <p className="mt-3 text-sm text-zinc-600">{t('systemUi.noUsage')}</p> : (
         <div className="mt-3 flex flex-wrap gap-2">
           {rows.map(row => (
             <span key={row.status} className="inline-flex items-center gap-2 rounded-lg border border-white/[0.06] bg-black/20 px-3 py-2 text-sm text-zinc-300">
@@ -143,15 +164,16 @@ function PricingStatusSection({ rows }: { rows: SystemInfo['pricing_status'] }) 
 }
 
 function DeviceCollectorSection({ devices }: { devices: SystemInfo['devices'] }) {
+  const t = useT()
   return (
     <section className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
-      <h3 className="text-sm font-semibold text-zinc-200">设备采集</h3>
-      {!devices.length ? <p className="mt-3 text-sm text-zinc-600">暂无设备</p> : (
+      <h3 className="text-sm font-semibold text-zinc-200">{t('systemUi.deviceCollection')}</h3>
+      {!devices.length ? <p className="mt-3 text-sm text-zinc-600">{t('systemUi.noDevices')}</p> : (
         <div className="mt-3 overflow-x-auto">
           <table className="min-w-full text-left text-sm">
             <thead className="text-xs uppercase tracking-wide text-zinc-600">
               <tr>
-                {['设备', '状态', '最近成功', '记录数'].map(label => (
+                {[t('systemUi.colDevice'), t('systemUi.colStatus'), t('systemUi.colLastSuccess'), t('systemUi.colRecords')].map(label => (
                   <th key={label} className="pb-2 pr-4 font-medium">{label}</th>
                 ))}
               </tr>
@@ -164,9 +186,9 @@ function DeviceCollectorSection({ devices }: { devices: SystemInfo['devices'] })
                     <div className="font-mono text-[11px] text-zinc-600">{device.id}</div>
                   </td>
                   <td className={`py-2 pr-4 ${device.collector_status === 'healthy' ? 'text-emerald-300' : 'text-zinc-500'}`}>
-                    {COLLECTOR_LABELS[device.collector_status]}
+                    {collectorLabel(device.collector_status, t)}
                   </td>
-                  <td className="py-2 pr-4 tabular-nums">{formatRelative(device.last_successful_run_at)}</td>
+                  <td className="py-2 pr-4 tabular-nums">{formatRelative(device.last_successful_run_at, t)}</td>
                   <td className="py-2 tabular-nums">{device.record_count.toLocaleString()}</td>
                 </tr>
               ))}
@@ -184,38 +206,39 @@ function formatBytes(value: number | null): string {
   return `${(value / (1024 * 1024)).toFixed(1)} MB`
 }
 
-function formatAge(seconds: number | null): string {
+function formatAge(seconds: number | null, t: TranslateFn): string {
   if (seconds == null) return '—'
-  if (seconds < 60) return `${seconds} 秒前`
+  if (seconds < 60) return t('relative.secondsAgo', { n: seconds })
   const minutes = Math.round(seconds / 60)
-  if (minutes < 60) return `${minutes} 分钟前`
+  if (minutes < 60) return t('relative.minutesAgo', { n: minutes })
   const hours = Math.round(minutes / 60)
-  if (hours < 24) return `${hours} 小时前`
-  return `${Math.round(hours / 24)} 天前`
+  if (hours < 24) return t('relative.hoursAgo', { n: hours })
+  return t('relative.daysAgo', { n: Math.round(hours / 24) })
 }
 
 export function RecoverySection({ recovery }: { recovery: SystemInfo['recovery'] }) {
+  const t = useT()
   return (
     <section className="border-t border-white/[0.06] pt-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h3 className="text-sm font-semibold text-zinc-200">数据库恢复</h3>
-          <p className="mt-1 text-xs text-zinc-600">在线备份、完整性校验与隔离恢复演练</p>
+          <h3 className="text-sm font-semibold text-zinc-200">{t('systemUi.recovery')}</h3>
+          <p className="mt-1 text-xs text-zinc-600">{t('systemUi.recoveryHint')}</p>
         </div>
         <span className={`rounded-full border px-3 py-1 text-xs font-medium ${RECOVERY_STYLES[recovery.state]}`}>
-          {RECOVERY_LABELS[recovery.state]}
+          {recoveryLabel(recovery.state, t)}
         </span>
       </div>
       <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <StatCard label="备份年龄" value={formatAge(recovery.age_seconds)} />
-        <StatCard label="副本大小" value={formatBytes(recovery.backup_bytes)} />
+        <StatCard label={t('systemUi.backupAge')} value={formatAge(recovery.age_seconds, t)} />
+        <StatCard label={t('systemUi.replicaSize')} value={formatBytes(recovery.backup_bytes)} />
         <StatCard label="Schema" value={recovery.schema_version == null ? '—' : String(recovery.schema_version)} />
-        <StatCard label="完整性" value={CHECK_LABELS[recovery.integrity]} />
+        <StatCard label={t('systemUi.integrity')} value={checkLabel(recovery.integrity, t)} />
       </div>
       <p className="mt-3 text-xs text-zinc-500">
-        最近演练：{CHECK_LABELS[recovery.drill.state]}
+        {t('systemUi.lastDrill', { state: checkLabel(recovery.drill.state, t) })}
         {recovery.drill.duration_ms == null ? '' : ` · ${recovery.drill.duration_ms.toLocaleString()} ms`}
-        {recovery.last_failure_at ? ` · 最近失败 ${formatRelative(recovery.last_failure_at)}` : ''}
+        {recovery.last_failure_at ? t('systemUi.lastFailure', { time: formatRelative(recovery.last_failure_at, t) }) : ''}
       </p>
     </section>
   )
@@ -241,18 +264,18 @@ function useSystemInfo() {
 }
 
 function BurnFxSection() {
+  const t = useT()
   const [preference, setPreference] = useState<BurnPreference>(() => readBurnPreference())
   const options: { value: BurnPreference; label: string; hint: string }[] = [
-    { value: 'auto', label: '自动', hint: '按真实 Tokens 调节' },
-    { value: 'on', label: '开启', hint: '固定暖光边框' },
-    { value: 'off', label: '关闭', hint: '完全不显示' },
+    { value: 'auto', label: t('systemUi.burnAuto'), hint: t('systemUi.burnAutoHint') },
+    { value: 'on', label: t('systemUi.burnOn'), hint: t('systemUi.burnOnHint') },
+    { value: 'off', label: t('systemUi.burnOff'), hint: t('systemUi.burnOffHint') },
   ]
   return (
     <section className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
-      <h3 className="text-sm font-semibold text-zinc-200">燃烧氛围</h3>
+      <h3 className="text-sm font-semibold text-zinc-200">{t('systemUi.burnTitle')}</h3>
       <p className="mt-1 text-xs leading-relaxed text-zinc-600">
-        全屏热浪装饰；默认自动，阈值基于当前筛选的真实消耗 Tokens（20 万 warm / 500 万 blaze）。
-        设置页内始终关闭以免干扰操作。
+        {t('systemUi.burnBody')}
       </p>
       <div className="mt-3 flex flex-wrap gap-2">
         {options.map(option => {
@@ -283,24 +306,25 @@ function BurnFxSection() {
 }
 
 export function SystemPanel() {
+  const t = useT()
   const { info, loading, error, load } = useSystemInfo()
-  if (loading && !info) return <ReadFeedback loading hasData={false} error={null} label="加载系统信息…" onRetry={() => { load() }} />
+  if (loading && !info) return <ReadFeedback loading hasData={false} error={null} label={t('systemUi.loading')} onRetry={() => { load() }} />
   if (!info) {
-    return <ReadFeedback loading={false} hasData={false} error={error} label="加载系统信息…" onRetry={() => { load() }} />
+    return <ReadFeedback loading={false} hasData={false} error={error} label={t('systemUi.loading')} onRetry={() => { load() }} />
   }
   return <div className="space-y-5">
-    <ReadFeedback loading={loading} hasData error={error} label="加载系统信息…" onRetry={() => { load() }} />
+    <ReadFeedback loading={loading} hasData error={error} label={t('systemUi.loading')} onRetry={() => { load() }} />
     <PanelHeader info={info} refresh={() => { load().catch(() => {}) }} />
     <RuntimeCards info={info} />
     <BurnFxSection />
     <RecoverySection recovery={info.recovery} />
     <section className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-      <StatCard label="设备数" value={String(info.counts.devices)} />
-      <StatCard label="用量记录" value={info.counts.usage_records.toLocaleString()} />
-      <StatCard label="计价规则" value={String(info.counts.pricing_rules)} />
+      <StatCard label={t('systemUi.deviceCount')} value={String(info.counts.devices)} />
+      <StatCard label={t('systemUi.usageRecords')} value={info.counts.usage_records.toLocaleString()} />
+      <StatCard label={t('systemUi.pricingRules')} value={String(info.counts.pricing_rules)} />
     </section>
     {info.health.notes.length > 0 ? <section className="rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-3 text-sm text-amber-200/90">
-      <p className="font-medium">健康提示</p>
+      <p className="font-medium">{t('systemUi.healthNotes')}</p>
       <ul className="mt-1 list-disc space-y-1 pl-5 text-amber-100/80">{info.health.notes.map(note => <li key={note}>{note}</li>)}</ul>
     </section> : null}
     <PricingStatusSection rows={info.pricing_status} />

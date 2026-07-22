@@ -30,14 +30,13 @@ jobs:
       - name: Scan working tree for private markers
         run: node scripts/scan-public-hygiene.mjs
 
+  # Linux-only gate: private-repo Actions minutes bill win×2 / mac×10.
+  # Local Windows collector installs from source and is not covered by this job.
+  # Re-enable a full matrix via a dedicated scheduled/manual workflow if needed.
   quality:
-    name: Quality (${{ matrix.os }})
+    name: Quality (ubuntu-latest)
     needs: hygiene
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
@@ -88,6 +87,9 @@ jobs:
 
       - name: Run browser E2E
         run: npm run test:e2e
+
+      - name: Verify launch site
+        run: npm run test:site
 
   container:
     name: Linux arm64 release container

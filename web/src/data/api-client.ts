@@ -1,3 +1,5 @@
+import { createTranslator, formatServerError, readLocale } from '../i18n'
+
 export type ApiErrorKind =
   | 'network'
   | 'timeout'
@@ -27,6 +29,10 @@ export interface JsonRequestOptions<T> extends Omit<RequestInit, 'signal'> {
   fetcher?: Fetcher
 }
 
+function t(key: string, params?: Record<string, string | number>): string {
+  return createTranslator(readLocale())(key, params)
+}
+
 function safeErrorMessage(value: unknown): string | undefined {
   if (typeof value !== 'object' || value == null || !('error' in value)) return undefined
   return typeof value.error === 'string' && value.error.trim() ? value.error : undefined
@@ -42,10 +48,12 @@ async function parseErrorBody(response: Response): Promise<unknown> {
 
 function statusError(response: Response, body: unknown): ApiError {
   const kind = response.status === 401 || response.status === 403 ? 'auth' : 'server'
+  const raw = safeErrorMessage(body)
   const fallback = kind === 'auth'
-    ? '登录状态无效，请重新登录'
-    : `服务请求失败 (${response.status})`
-  return new ApiError(kind, safeErrorMessage(body) ?? fallback, response.status)
+    ? t('api.authInvalid')
+    : t('api.requestFailed', { status: response.status })
+  const message = raw ? formatServerError(raw, createTranslator(readLocale())) : fallback
+  return new ApiError(kind, message, response.status)
 }
 
 function requestSignal(caller: AbortSignal | undefined, timeout: AbortSignal): AbortSignal {
@@ -66,22 +74,22 @@ export async function requestJson<T>(
     let body: unknown
     try {
       body = await response.json()
-    } catch (cause) {
-      throw new ApiError('invalid-response', '服务响应不是有效 JSON', response.status)
+    } catch {
+      throw new ApiError('invalid-response', t('api.invalidJson'), response.status)
     }
     try {
       return decode(body)
-    } catch (cause) {
-      throw new ApiError('invalid-response', '服务响应格式异常', response.status)
+    } catch {
+      throw new ApiError('invalid-response', t('api.invalidShape'), response.status)
     }
   } catch (cause) {
     if (cause instanceof ApiError) throw cause
-    if (timedOut) throw new ApiError('timeout', '请求超时，请重试')
-    if (caller?.aborted) throw new ApiError('aborted', '请求已取消')
+    if (timedOut) throw new ApiError('timeout', t('api.timeout'))
+    if (caller?.aborted) throw new ApiError('aborted', t('api.aborted'))
     if (cause instanceof DOMException && cause.name === 'AbortError') {
-      throw new ApiError('aborted', '请求已取消')
+      throw new ApiError('aborted', t('api.aborted'))
     }
-    throw new ApiError('network', '网络连接失败，请检查连接后重试')
+    throw new ApiError('network', t('api.network'))
   } finally {
     clearTimeout(timer)
   }
@@ -94,5 +102,5 @@ export function isAbortError(error: unknown): boolean {
 export function toApiError(error: unknown): ApiError {
   return error instanceof ApiError
     ? error
-    : new ApiError('network', error instanceof Error ? error.message : '请求失败')
+    : new ApiError('network', error instanceof Error ? error.message : t('api.requestFailed', { status: '?' }))
 }

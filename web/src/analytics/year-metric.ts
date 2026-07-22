@@ -3,8 +3,13 @@ import type { YearMetric } from './date-range'
 
 export type AnnualAggregate = YearStatsRow | MonthStatsRow
 
+/** English defaults; UI should prefer t('yearMetric.*') when rendering. */
 export const YEAR_METRIC_LABELS: Record<YearMetric, string> = {
-  cost: '花费', tokens: '真实 Tokens', calls: 'Calls',
+  cost: 'Cost', tokens: 'Real tokens', calls: 'Calls',
+}
+
+export function yearMetricLabelKey(metric: YearMetric): `yearMetric.${YearMetric}` {
+  return `yearMetric.${metric}`
 }
 
 export function annualMetricValue(row: AnnualAggregate, metric: YearMetric): number {

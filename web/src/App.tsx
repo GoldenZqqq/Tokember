@@ -29,6 +29,7 @@ import {
   readBurnPreference,
   type BurnPreference,
 } from './burn/burn-preference'
+import { useT } from './i18n'
 
 const DashboardContent = lazy(() => import('./components/DashboardContent')
   .then(module => ({ default: module.DashboardContent })))
@@ -123,18 +124,20 @@ function DashboardControls(props: DashboardProps) {
 }
 
 function DeviceFeedback(props: DashboardProps) {
+  const t = useT()
   if (props.devices.status !== 'error' && props.devices.status !== 'stale') return null
   return <div className="mb-4"><ReadFeedback loading={false}
     hasData={props.devices.data != null} error={props.devices.error}
-    label="加载设备中…" onRetry={props.onRefresh} /></div>
+    label={t('common.loadingDevices')} onRetry={props.onRefresh} /></div>
 }
 
 function DashboardResource(props: DashboardProps) {
+  const t = useT()
   const current = props.stats.data
   const firstRun = current != null && isEmpty(current) && props.devices.data?.length === 0
   return <ResourceView status={props.stats.status} error={props.stats.error}
-    empty={isEmpty(current) && !firstRun} loadingLabel="加载用量数据…"
-    emptyLabel="当前筛选范围没有用量记录" onRetry={props.onRefresh}>
+    empty={isEmpty(current) && !firstRun} loadingLabel={t('common.loadingUsage')}
+    emptyLabel={t('common.emptyUsage')} onRetry={props.onRefresh}>
     {firstRun ? <FirstRunEmptyState /> : current ? <Suspense fallback={<RouteFallback />}><DashboardContent
       stats={current} range={props.filters.range}
       onAudit={(dimension?: AuditDimension) => {
@@ -172,7 +175,8 @@ function Dashboard(props: DashboardProps) {
 }
 
 function RouteFallback() {
-  return <div className="flex h-64 items-center justify-center text-sm text-zinc-500" role="status">加载页面…</div>
+  const t = useT()
+  return <div className="flex h-64 items-center justify-center text-sm text-zinc-500" role="status">{t('common.loadingPage')}</div>
 }
 
 function useBurnPreference(): BurnPreference {

@@ -1,5 +1,6 @@
 import type { Stats } from '../dashboard-stats'
 import { hasIncompleteCost } from '../cost-coverage'
+import { useT, type TranslateFn } from '../i18n'
 
 function formatNumber(n: number): string {
   if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + 'M'
@@ -7,20 +8,29 @@ function formatNumber(n: number): string {
   return n.toFixed(0)
 }
 
-function formatChineseApprox(n: number): string {
-  if (n >= 100_000_000) return `${(n / 100_000_000).toFixed(2)} 亿`
-  if (n >= 10_000) return `${(n / 10_000).toFixed(2)} 万`
-  return n.toLocaleString('zh-CN')
+function formatApprox(n: number, locale: string): string {
+  if (locale.startsWith('zh')) {
+    if (n >= 100_000_000) return `${(n / 100_000_000).toFixed(2)} 亿`
+    if (n >= 10_000) return `${(n / 10_000).toFixed(2)} 万`
+  }
+  return n.toLocaleString(locale.startsWith('zh') ? 'zh-CN' : 'en-US', {
+    notation: 'compact',
+    maximumFractionDigits: 2,
+  })
 }
 
 export function Overview({ stats, onAudit }: { stats: Stats; onAudit?: () => void }) {
+  const t = useT()
   const incompleteCost = hasIncompleteCost(stats.pricing_coverage)
-  const cards = overviewCards(stats, incompleteCost)
+  const cards = overviewCards(stats, incompleteCost, t)
+  const numberLocale = typeof document !== 'undefined' && document.documentElement.lang.startsWith('zh')
+    ? 'zh-CN'
+    : 'en-US'
 
   return (
     <div className="space-y-4">
       <section role={onAudit ? 'button' : undefined} tabIndex={onAudit ? 0 : undefined}
-        aria-label={onAudit ? '审计真实消耗 Tokens 构成' : undefined}
+        aria-label={onAudit ? t('overview.auditAria') : undefined}
         onClick={onAudit} onKeyDown={event => {
           if (onAudit && (event.key === 'Enter' || event.key === ' ')) onAudit()
         }}
@@ -33,16 +43,16 @@ export function Overview({ stats, onAudit }: { stats: Stats; onAudit?: () => voi
             </svg>
           </div>
           <div className="min-w-0">
-            <p className="mb-1 text-xs font-medium tracking-wide text-zinc-400">真实消耗 Tokens</p>
+            <p className="mb-1 text-xs font-medium tracking-wide text-zinc-400">{t('overview.realTokens')}</p>
             <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-              <p className="text-3xl font-bold leading-none tracking-tight text-zinc-50 tabular-nums md:text-4xl" title={stats.real_total_tokens.toLocaleString('zh-CN')}>
-                {stats.real_total_tokens.toLocaleString('zh-CN')}
+              <p className="text-3xl font-bold leading-none tracking-tight text-zinc-50 tabular-nums md:text-4xl" title={stats.real_total_tokens.toLocaleString(numberLocale)}>
+                {stats.real_total_tokens.toLocaleString(numberLocale)}
               </p>
               <span className="rounded-md bg-white/[0.04] px-2 py-1 text-xs font-medium text-zinc-400">
-                ≈ {formatChineseApprox(stats.real_total_tokens)}
+                ≈ {formatApprox(stats.real_total_tokens, numberLocale)}
               </span>
             </div>
-            <p className="mt-2 text-[11px] text-zinc-600">输入 + 输出 + 缓存读取/创建（按来源口径去重）</p>
+            <p className="mt-2 text-[11px] text-zinc-600">{t('overview.realTokensHint')}</p>
           </div>
         </div>
       </section>
@@ -60,15 +70,15 @@ export function Overview({ stats, onAudit }: { stats: Stats; onAudit?: () => voi
   )
 }
 
-function overviewCards(stats: Stats, incompleteCost: boolean) {
+function overviewCards(stats: Stats, incompleteCost: boolean, t: TranslateFn) {
   return [
     {
-      label: incompleteCost ? '已知花费' : '总花费',
+      label: incompleteCost ? t('overview.knownCost') : t('overview.totalCost'),
       value: `$${stats.total_cost.toFixed(2)}`,
       color: 'text-orange-400',
     },
-    { label: '总请求', value: formatNumber(stats.total_requests), color: 'text-blue-400' },
-    { label: '输入 Tokens', value: formatNumber(stats.total_input_tokens), color: 'text-emerald-400' },
-    { label: '输出 Tokens', value: formatNumber(stats.total_output_tokens), color: 'text-purple-400' },
+    { label: t('overview.totalRequests'), value: formatNumber(stats.total_requests), color: 'text-blue-400' },
+    { label: t('overview.inputTokens'), value: formatNumber(stats.total_input_tokens), color: 'text-emerald-400' },
+    { label: t('overview.outputTokens'), value: formatNumber(stats.total_output_tokens), color: 'text-purple-400' },
   ]
 }

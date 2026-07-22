@@ -69,8 +69,6 @@ jobs:
   package-images:
     name: Server images (amd64 + arm64)
     runs-on: ubuntu-latest
-    outputs:
-      manifest: ${{ steps.manifest.outputs.path }}
     steps:
       - uses: actions/checkout@v4
         with:

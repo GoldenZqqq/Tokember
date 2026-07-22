@@ -1,12 +1,18 @@
 // Display-only model family helpers. Storage and pricing keep the raw model ID.
 
-/** Stable family key used to merge free/build billing variants of one model. */
+/**
+ * Stable family key used to merge display variants of one model.
+ * Strips billing/mode suffixes only; storage and pricing keep the raw ID.
+ * Same-provider rows with the same key are summed by mergeByModelFamily.
+ */
 export function modelFamilyKey(model: string): string {
   const name = model.trim()
   if (!name) return name
   return name
     .replace(/-build-free$/i, '')
     .replace(/-build$/i, '')
+    // Claude Code (and similar) emit base + thinking as separate model IDs.
+    .replace(/-thinking$/i, '')
 }
 
 /** User-facing label for a raw model or family key. */

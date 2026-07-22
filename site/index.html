@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#090806">
+  <meta name="color-scheme" content="dark">
+  <meta name="description" content="Tokember is a self-hosted ledger for multi-device AI usage, cost, and collector health.">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Tokember - Track every token. Read every ember.">
+  <meta property="og:description" content="A self-hosted ledger for every AI token you burn.">
+  <meta property="og:image" content="./assets/tokember-mark.png">
+  <title>Tokember - Self-hosted AI usage ledger</title>
+  <link rel="icon" href="./assets/tokember-mark.png">
+  <link rel="preload" href="./assets/fonts/barlow-condensed-700.ttf" as="font" type="font/ttf" crossorigin>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <div class="site-shell">
+    <header class="site-header" aria-label="Primary navigation">
+      <a class="brand" href="#top" aria-label="Tokember home">
+        <img src="./assets/tokember-mark.png" alt="" width="44" height="44">
+        <span>Tokember</span>
+      </a>
+      <nav class="site-nav" aria-label="Project links">
+        <a href="#privacy">Privacy</a>
+        <a href="#install">Install</a>
+        <a href="https://github.com/GoldenZqqq/Tokember/releases/tag/v0.1.0">Release</a>
+        <a class="nav-github" href="https://github.com/GoldenZqqq/Tokember">GitHub</a>
+      </nav>
+      <details class="mobile-nav">
+        <summary title="Open project navigation">
+          <span class="mobile-nav-icon" aria-hidden="true"><i></i><i></i><i></i></span>
+          <span class="sr-only">Open project navigation</span>
+        </summary>
+        <nav aria-label="Mobile project links">
+          <a href="#privacy">Privacy</a>
+          <a href="#install">Install</a>
+          <a href="https://github.com/GoldenZqqq/Tokember/releases/tag/v0.1.0">Release</a>
+          <a href="https://github.com/GoldenZqqq/Tokember">GitHub</a>
+        </nav>
+      </details>
+    </header>
+
+    <main id="main">
+      <section class="hero" id="top" aria-labelledby="hero-title">
+        <canvas class="furnace-canvas" id="furnace-canvas" aria-hidden="true"></canvas>
+        <div class="hero-glow" aria-hidden="true"></div>
+        <div class="hero-copy">
+          <p class="signal-label"><span></span> Deterministic demo / no visitor data</p>
+          <h1 id="hero-title">Tokember</h1>
+          <p class="hero-line">Track every token.<br>Read every ember.</p>
+          <p class="hero-support">
+            One precise view of AI usage, cost, models, devices, and collector health.
+            Your server. Your SQLite. No SaaS required.
+          </p>
+          <div class="hero-actions" aria-label="Get started">
+            <a class="button button-primary" href="https://github.com/GoldenZqqq/Tokember/releases/tag/v0.1.0">View the release</a>
+            <a class="button button-secondary" href="https://github.com/GoldenZqqq/Tokember#5-minute-local-experience">Read the docs</a>
+          </div>
+        </div>
+
+        <div class="furnace-core" aria-label="Tokember product signal">
+          <img src="./assets/tokember-mark.png" alt="Tokember flame mark" width="512" height="512">
+          <div class="core-orbit core-orbit-a" aria-hidden="true"></div>
+          <div class="core-orbit core-orbit-b" aria-hidden="true"></div>
+          <p class="core-readout"><span>Demo ledger online</span><strong>1,540</strong><small>fixture tokens observed</small></p>
+        </div>
+
+        <dl class="telemetry-rail" aria-label="Deterministic product demo telemetry">
+          <div><dt>Source</dt><dd>Codex</dd></div>
+          <div><dt>Calls</dt><dd>1</dd></div>
+          <div><dt>Tokens</dt><dd>1,540</dd></div>
+          <div><dt>Known cost</dt><dd>$0.42</dd></div>
+          <div><dt>Collector</dt><dd><span class="status-dot"></span>Healthy</dd></div>
+        </dl>
+        <a class="scroll-cue" href="#flow"><span>Follow the signal</span><i aria-hidden="true"></i></a>
+      </section>
+
+      <section class="flow-section" id="flow" aria-labelledby="flow-title">
+        <div class="section-heading">
+          <p class="section-index">The collection path</p>
+          <h2 id="flow-title">Many tools in.<br>One truthful ledger out.</h2>
+          <p id="flow-description">Tokember reads completed local activity, uploads narrow usage records, and turns them into an auditable self-hosted view.</p>
+        </div>
+        <div class="signal-path" aria-describedby="flow-description">
+          <ul class="source-cloud" aria-label="Example AI activity sources">
+            <li>Claude Code</li><li>Codex</li><li>Cursor</li><li>Gemini CLI</li>
+            <li>Grok Build</li><li>OpenClaw</li><li>Pi Agent</li><li>Hermes</li>
+          </ul>
+          <article class="path-node path-collector">
+            <small>On each machine</small>
+            <strong>Collector</strong>
+            <span>Reads local tool data</span>
+          </article>
+          <article class="path-node path-server">
+            <small>On your infrastructure</small>
+            <strong>Tokember</strong>
+            <span>Hono + SQLite + Web</span>
+          </article>
+        </div>
+      </section>
+
+      <section class="proof-section" aria-labelledby="proof-title">
+        <div class="proof-stage">
+          <div class="proof-copy">
+            <p class="section-index">Deterministic demo telemetry</p>
+            <h2 id="proof-title">The burn becomes legible.</h2>
+            <p>Calls, tokens, cost, model distribution, devices, and collection health share one accounting vocabulary.</p>
+            <a class="text-link" href="https://github.com/GoldenZqqq/Tokember#5-minute-local-experience">Inspect the real product path <span aria-hidden="true">-&gt;</span></a>
+          </div>
+          <div class="instrument-panel" aria-label="Representative Tokember interface using deterministic demo values">
+            <div class="instrument-head">
+              <span>Today / All devices</span><span>Snapshot stable</span>
+            </div>
+            <div class="instrument-total">
+              <small>Real token activity</small><strong>1,540</strong><span>Input + output + cache</span>
+            </div>
+            <div class="instrument-chart" aria-hidden="true">
+              <i style="--bar: 30%"></i><i style="--bar: 46%"></i><i style="--bar: 39%"></i>
+              <i style="--bar: 68%"></i><i style="--bar: 58%"></i><i style="--bar: 82%"></i>
+              <i style="--bar: 72%"></i><i style="--bar: 94%"></i><i style="--bar: 86%"></i>
+            </div>
+            <dl class="instrument-stats">
+              <div><dt>Known cost</dt><dd>$0.42</dd></div>
+              <div><dt>Requests</dt><dd>1</dd></div>
+              <div><dt>Input tokens</dt><dd>1.2K</dd></div>
+              <div><dt>Output tokens</dt><dd>340</dd></div>
+            </dl>
+          </div>
+        </div>
+      </section>
+
+      <section class="privacy-section" id="privacy" aria-labelledby="privacy-title">
+        <div class="section-heading privacy-heading">
+          <p class="section-index">A hard privacy boundary</p>
+          <h2 id="privacy-title">Count the work.<br>Keep the work private.</h2>
+        </div>
+        <div class="privacy-cutaway">
+          <div class="privacy-zone privacy-local">
+            <p>Never uploaded</p>
+            <ul><li>Prompts</li><li>Source code</li><li>Completions</li><li>Full transcripts</li><li>Vendor API keys</li></ul>
+          </div>
+          <div class="privacy-gate" aria-label="Only allowlisted usage records cross the boundary">
+            <span>Local boundary</span><i aria-hidden="true"></i>
+          </div>
+          <div class="privacy-zone privacy-server">
+            <p>Uploaded to your server</p>
+            <ul><li>Token counters</li><li>Model and source</li><li>Timestamps</li><li>Calculated cost</li><li>Collector health</li></ul>
+          </div>
+        </div>
+        <a class="text-link" href="https://github.com/GoldenZqqq/Tokember/blob/master/docs/privacy.md">Read the privacy contract <span aria-hidden="true">-&gt;</span></a>
+      </section>
+
+      <section class="source-section" aria-labelledby="sources-title">
+        <div class="section-heading compact-heading">
+          <p class="section-index">Honest day-zero support</p>
+          <h2 id="sources-title">Built for the tools already in your loop.</h2>
+        </div>
+        <ul class="source-ledger" aria-label="Supported AI tool sources">
+          <li><span>Claude Code</span><small>Supported</small></li>
+          <li><span>Codex</span><small>Supported</small></li>
+          <li><span>Grok Build</span><small>Supported</small></li>
+          <li><span>Cursor</span><small>Supported</small></li>
+          <li><span>Gemini CLI</span><small>Supported</small></li>
+          <li><span>Cline</span><small>Supported</small></li>
+          <li><span>Roo Code</span><small>Supported</small></li>
+          <li><span>Antigravity</span><small>Supported</small></li>
+          <li><span>Hermes</span><small>Supported</small></li>
+          <li><span>OpenClaw</span><small>Supported</small></li>
+          <li><span>Pi Agent</span><small>Supported</small></li>
+          <li><span>Oh My Pi</span><small>Supported</small></li>
+        </ul>
+        <p class="source-note">No gateway mash-up. No invented coverage. Unsupported tools stay clearly marked on the roadmap.</p>
+      </section>
+
+      <section class="film-section" id="film" aria-labelledby="film-title">
+        <div class="film-copy">
+          <p class="section-index">Product film / 42 seconds</p>
+          <h2 id="film-title">Watch the ledger ignite.</h2>
+          <p>Follow raw AI usage through the collector, privacy boundary, and truthful ledger to the first open-source ember.</p>
+        </div>
+        <div class="film-frame" data-film-frame>
+          <video class="film-player" controls playsinline preload="metadata" poster="./assets/tokember-launch-film-poster.jpg" aria-label="Tokember product launch film">
+            <source src="./assets/tokember-launch-film.webm" type="video/webm">
+            <source src="./assets/tokember-launch-film.mp4" type="video/mp4">
+            <p><a href="./assets/tokember-launch-film.mp4">Download the Tokember product launch film.</a></p>
+          </video>
+        </div>
+      </section>
+
+      <section class="install-section" id="install" aria-labelledby="install-title">
+        <div class="install-copy">
+          <p class="section-index">Node 22 / MIT licensed</p>
+          <h2 id="install-title">Light the first ember.</h2>
+          <p>Clone the public repository, start the self-hosted server, then install a Collector on every machine you want to observe.</p>
+        </div>
+        <div class="command-block">
+          <code id="install-command">git clone https://github.com/GoldenZqqq/Tokember.git</code>
+          <button class="copy-button" type="button" data-copy="#install-command" title="Copy install command">
+            <span class="copy-icon" aria-hidden="true"></span><span class="sr-only">Copy install command</span>
+          </button>
+          <span class="copy-status" role="status" aria-live="polite"></span>
+        </div>
+        <div class="platform-row" aria-label="Supported operating systems">
+          <span>Windows 10+</span><span>macOS 12+</span><span>Linux</span><span>Docker</span>
+        </div>
+        <div class="install-actions">
+          <a class="button button-primary" href="https://github.com/GoldenZqqq/Tokember#5-minute-local-experience">Open the quick start</a>
+          <a class="button button-secondary" href="https://github.com/GoldenZqqq/Tokember/releases/tag/v0.1.0">Download v0.1.0</a>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div><img src="./assets/tokember-mark.png" alt="" width="32" height="32"><strong>Tokember</strong></div>
+      <p>Track every token. Read every ember.</p>
+      <nav aria-label="Project resources">
+        <a href="https://github.com/GoldenZqqq/Tokember">Source</a>
+        <a href="https://github.com/GoldenZqqq/Tokember/blob/master/SECURITY.md">Security</a>
+        <a href="https://github.com/GoldenZqqq/Tokember/blob/master/LICENSE">MIT License</a>
+      </nav>
+    </footer>
+  </div>
+  <script src="./main.js" defer></script>
+</body>
+</html>

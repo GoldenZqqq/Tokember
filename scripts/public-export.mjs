@@ -16,13 +16,14 @@ const PUBLIC_ROOT_FILES = new Set([
 ])
 
 const PUBLIC_PREFIXES = [
-  'collector/', 'contracts/', 'e2e/', 'scripts/', 'server/', 'web/',
+  'collector/', 'contracts/', 'e2e/', 'scripts/', 'server/', 'site/', 'web/',
   '.github/ISSUE_TEMPLATE/',
 ]
 
 const PUBLIC_EXACT = new Set([
   '.github/PULL_REQUEST_TEMPLATE.md',
   '.github/workflows/ci.yml',
+  '.github/workflows/pages.yml',
   '.github/workflows/release.yml',
 ])
 
@@ -32,6 +33,7 @@ const PRIVATE_EXACT = new Set([
 
 const PRIVATE_PREFIXES = [
   '.agents/', '.codex/', '.impeccable/', '.trellis/', 'docs/research/',
+  'videos/',
 ]
 
 function normalizePath(path) {

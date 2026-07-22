@@ -8,6 +8,7 @@ import { ModelTable } from './components/ModelTable'
 import { ProviderBreakdown } from './components/ProviderBreakdown'
 import type { Stats } from './dashboard-stats'
 import { providerDisplayName } from './provider-display'
+import { withLocale } from './test-utils'
 
 const completeCoverage: CostCoverage = {
   priced_calls: 1, unpriced_calls: 0, priced_tokens: 100, unpriced_tokens: 0,
@@ -43,13 +44,13 @@ test('provider display names use the tool names shown to users', () => {
 })
 
 test('provider breakdown renders display names instead of internal IDs', () => {
-  const html = renderToStaticMarkup(createElement(ProviderBreakdown, {
+  const html = renderToStaticMarkup(withLocale(createElement(ProviderBreakdown, {
     data: [
       { provider: 'codex', cost: 10, requests: 1, real_total_tokens: 2 },
       { provider: 'claude', cost: 5, requests: 1, real_total_tokens: 2 },
       { provider: 'grok', cost: 1, requests: 1, real_total_tokens: 2 },
     ],
-  }))
+  })))
 
   assert.match(html, /Codex/)
   assert.match(html, /ClaudeCode/)
@@ -59,8 +60,23 @@ test('provider breakdown renders display names instead of internal IDs', () => {
   assert.doesNotMatch(html, />grok</)
 })
 
+test('provider breakdown caps height and scrolls when sources grow', () => {
+  const html = renderToStaticMarkup(withLocale(createElement(ProviderBreakdown, {
+    data: [
+      { provider: 'codex', cost: 10, requests: 1, real_total_tokens: 2 },
+      { provider: 'claude', cost: 5, requests: 1, real_total_tokens: 2 },
+      { provider: 'grok', cost: 3, requests: 1, real_total_tokens: 2 },
+      { provider: 'hermes', cost: 2, requests: 1, real_total_tokens: 2 },
+      { provider: 'antigravity', cost: 1, requests: 1, real_total_tokens: 2 },
+    ],
+  })))
+  // Match DailyChart card height; list scrolls instead of stretching the row.
+  assert.match(html, /max-h-\[22rem\]/)
+  assert.match(html, /overflow-y-auto/)
+})
+
 test('model table and comparison panel keep the same tool display names', () => {
-  const modelHtml = renderToStaticMarkup(createElement(ModelTable, {
+  const modelHtml = renderToStaticMarkup(withLocale(createElement(ModelTable, {
     data: [
       {
         model: 'gpt-5.6-sol', provider: 'codex', cost: 1, requests: 1,
@@ -71,7 +87,7 @@ test('model table and comparison panel keep the same tool display names', () => 
         real_total_tokens: 2, input_tokens: 1, output_tokens: 1, unpriced_requests: 0,
       },
     ],
-  }))
+  })))
   assert.match(modelHtml, /Codex/)
   assert.match(modelHtml, /ClaudeCode/)
   assert.doesNotMatch(modelHtml, />codex</)
@@ -90,12 +106,12 @@ test('model table and comparison panel keep the same tool display names', () => 
     by_provider: [{ provider: 'claude', cost: 0, requests: 0, real_total_tokens: 0 }],
     by_model: [], comparison: undefined,
   }
-  const comparisonHtml = renderToStaticMarkup(createElement(ComparisonPanel, {
+  const comparisonHtml = renderToStaticMarkup(withLocale(createElement(ComparisonPanel, {
     stats: {
       ...current,
-      comparison: { mode: 'previous-period', label: '上一周期', stats: previous },
+      comparison: { mode: 'previous-period', label: 'Previous period', stats: previous },
     },
-  }))
+  })))
   assert.match(comparisonHtml, /ClaudeCode/)
   assert.doesNotMatch(comparisonHtml, />claude</)
 })
