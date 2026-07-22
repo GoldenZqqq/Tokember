@@ -1,0 +1,16 @@
+[Unit]
+Description=Sync Sub2API usage to Tokember
+After=network-online.target docker.service
+Wants=network-online.target docker.service
+
+[Service]
+Type=oneshot
+EnvironmentFile=-/etc/ai-burn-sub2api.env
+EnvironmentFile=-/etc/tokember-sub2api.env
+ExecStart=/usr/bin/python3 /opt/tokember/sub2api_collector.py
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+StateDirectory=tokember-sub2api
+ReadWritePaths=/var/lib/tokember-sub2api -/var/lib/ai-burn-sub2api /var/run/docker.sock

@@ -1,0 +1,31 @@
+node_modules/
+__pycache__/
+*.pyc
+dist/
+# Repository-root runtime data only; package source directories may be named data.
+/data/
+*.db
+.env
+*.db-shm
+*.db-wal
+*.db
+
+# machine-local collector runner (absolute paths, not for git)
+collector/run-collector.cmd
+collector/run-collector.vbs
+collector/collector.log
+collector/collector.log.*
+collector/collector.env
+
+# local release packaging outputs
+/tokember-collector-pack/
+/tokember-release-archives/
+/tokember-release-images/
+/dist-release/
+/stage/
+
+# local research / one-off notes (not product source)
+/output/
+/test-results/
+/playwright-report/
+/.tmp/

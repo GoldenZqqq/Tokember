@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Tokember">
+  <defs>
+    <linearGradient id="ember" x1="12" y1="50" x2="48" y2="10" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FBBF24"/>
+      <stop offset="0.55" stop-color="#F97316"/>
+      <stop offset="1" stop-color="#EA580C"/>
+    </linearGradient>
+  </defs>
+  <g fill="none" stroke="url(#ember)" stroke-width="9" stroke-linecap="butt">
+    <path d="M23 13A23 23 0 0 0 10 31"/>
+    <path d="M9 36a23 23 0 0 0 13 18"/>
+    <path d="M27 56a23 23 0 0 0 22-10"/>
+  </g>
+  <path fill="url(#ember)" d="M44 49c6-8 8-17 5-25-1 5-4 7-7 7-3 0-5-2-5-5 0-5 7-8 6-17 8 6 12 14 10 23 4 5 4 12 0 20z"/>
+</svg>

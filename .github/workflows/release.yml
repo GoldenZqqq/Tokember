@@ -1,0 +1,268 @@
+name: Release
+
+# Public distribution only. Never deploys to production hosts (see deploy.yml).
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Override package version (default: server/package.json)'
+        required: false
+        type: string
+
+permissions:
+  contents: write
+  packages: write
+  id-token: write
+  attestations: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  package-collector:
+    name: Package collector
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install and build collector
+        run: |
+          npm ci
+          npm run build -w collector
+
+      - name: Stage and archive collector pack
+        env:
+          VERSION_INPUT: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          VERSION="${VERSION_INPUT:-$(node -p "require('./collector/package.json').version")}"
+          COMMIT="$(git rev-parse HEAD)"
+          BUILT_AT="$(git show -s --format=%cI "$COMMIT")"
+          node scripts/package-collector-release.mjs \
+            --workspace . \
+            --output tokember-collector-pack \
+            --archives tokember-release-archives \
+            --commit "$COMMIT" \
+            --built-at "$BUILT_AT" \
+            --version "$VERSION"
+          ls -la tokember-release-archives
+
+      - name: Upload collector archives
+        uses: actions/upload-artifact@v4
+        with:
+          name: collector-archives
+          path: tokember-release-archives/*
+          if-no-files-found: error
+
+  package-images:
+    name: Server images (amd64 + arm64)
+    runs-on: ubuntu-latest
+    outputs:
+      manifest: ${{ steps.manifest.outputs.path }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Resolve version and image names
+        id: meta
+        env:
+          VERSION_INPUT: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          VERSION="${VERSION_INPUT:-$(node -p "require('./server/package.json').version")}"
+          COMMIT="$(git rev-parse HEAD)"
+          SHORT="${COMMIT:0:12}"
+          OWNER_LC="$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')"
+          IMAGE_BASE="ghcr.io/${OWNER_LC}/tokember"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "commit=$COMMIT" >> "$GITHUB_OUTPUT"
+          echo "image_base=$IMAGE_BASE" >> "$GITHUB_OUTPUT"
+          echo "tag_version=${IMAGE_BASE}:${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "tag_sha=${IMAGE_BASE}:sha-${SHORT}" >> "$GITHUB_OUTPUT"
+
+      - name: Login to GHCR
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+
+      - name: Build multi-arch image (push when registry available)
+        id: build
+        env:
+          SOURCE_DATE: ${{ github.event.head_commit.timestamp }}
+        run: |
+          set -euo pipefail
+          COMMIT="${{ steps.meta.outputs.commit }}"
+          BUILT_AT="$(git show -s --format=%cI "$COMMIT")"
+          IMAGE_VERSION="${{ steps.meta.outputs.tag_version }}"
+          IMAGE_SHA="${{ steps.meta.outputs.tag_sha }}"
+
+          # Prefer push to GHCR; fall back to local multi-arch bake metadata only.
+          set +e
+          docker buildx build \
+            --platform linux/amd64,linux/arm64 \
+            --build-arg TOKEMBER_COMMIT="$COMMIT" \
+            --build-arg TOKEMBER_BUILT_AT="$BUILT_AT" \
+            --tag "$IMAGE_VERSION" \
+            --tag "$IMAGE_SHA" \
+            --provenance=true \
+            --sbom=true \
+            --push \
+            .
+          STATUS=$?
+          set -e
+
+          mkdir -p tokember-release-images
+          if [ "$STATUS" -eq 0 ]; then
+            # Resolve digests via imagetools when possible
+            AMD_DIGEST=""
+            ARM_DIGEST=""
+            if docker buildx imagetools inspect "$IMAGE_VERSION" >/tmp/inspect.txt 2>/dev/null; then
+              AMD_DIGEST=$(awk '/Platform:.*linux\/amd64/{p=1} p&&/Digest:/{print $2; exit}' /tmp/inspect.txt || true)
+              ARM_DIGEST=$(awk '/Platform:.*linux\/arm64/{p=1} p&&/Digest:/{print $2; exit}' /tmp/inspect.txt || true)
+            fi
+            ARGS=(
+              --output tokember-release-images/image-manifest.json
+              --version "${{ steps.meta.outputs.version }}"
+              --commit "$COMMIT"
+            )
+            if [ -n "$AMD_DIGEST" ]; then
+              ARGS+=(--image "linux/amd64=${IMAGE_VERSION}@${AMD_DIGEST}")
+            else
+              ARGS+=(--image "linux/amd64=${IMAGE_VERSION}")
+            fi
+            if [ -n "$ARM_DIGEST" ]; then
+              ARGS+=(--image "linux/arm64=${IMAGE_VERSION}@${ARM_DIGEST}")
+            else
+              ARGS+=(--image "linux/arm64=${IMAGE_VERSION}")
+            fi
+            node scripts/package-image-manifest.mjs "${ARGS[@]}"
+            echo "pushed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "GHCR push failed or unavailable; building platforms individually for metadata only"
+            for PLATFORM in linux/amd64 linux/arm64; do
+              ARCH_TAG="tokember-release-local:${PLATFORM//\//-}"
+              docker buildx build \
+                --platform "$PLATFORM" \
+                --build-arg TOKEMBER_COMMIT="$COMMIT" \
+                --build-arg TOKEMBER_BUILT_AT="$BUILT_AT" \
+                --tag "$ARCH_TAG" \
+                --load \
+                .
+            done
+            node scripts/package-image-manifest.mjs \
+              --output tokember-release-images/image-manifest.json \
+              --version "${{ steps.meta.outputs.version }}" \
+              --commit "$COMMIT" \
+              --image "linux/amd64=tokember-release-local:linux-amd64" \
+              --image "linux/arm64=tokember-release-local:linux-arm64"
+            echo "pushed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Upload image manifest
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-manifest
+          path: tokember-release-images/image-manifest.json
+          if-no-files-found: error
+
+  publish:
+    name: Publish GitHub Release
+    needs: [package-collector, package-images]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-assets
+
+      - name: Assemble release assets
+        id: assets
+        env:
+          VERSION_INPUT: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          VERSION="${VERSION_INPUT:-$(node -p "require('./server/package.json').version")}"
+          mkdir -p dist-release
+          cp -a release-assets/collector-archives/. dist-release/ || true
+          cp -a release-assets/image-manifest/. dist-release/ || true
+          # Aggregate top-level checksums for uploaded files (exclude nested SHA256SUMS if present)
+          (
+            cd dist-release
+            : > SHA256SUMS.release
+            for f in *; do
+              [ -f "$f" ] || continue
+              [ "$f" = "SHA256SUMS" ] && continue
+              [ "$f" = "SHA256SUMS.release" ] && continue
+              sha256sum "$f" >> SHA256SUMS.release
+            done
+            if [ -s SHA256SUMS.release ]; then
+              mv SHA256SUMS.release SHA256SUMS
+            else
+              rm -f SHA256SUMS.release
+            fi
+          )
+          ls -la dist-release
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Tokember ${{ steps.assets.outputs.version }}
+          generate_release_notes: true
+          body: |
+            ## Tokember ${{ steps.assets.outputs.version }}
+
+            ### Collector
+            Multi-platform pack (`tokember-collector-*-node22.{tar.gz,zip}`).
+            Requires **Node.js ≥ 22**.
+
+            ```bash
+            # after extracting
+            node install.mjs install   # or upgrade / doctor
+            ```
+
+            ### Server image
+            See `image-manifest.json` for `linux/amd64` and `linux/arm64` tags/digests (GHCR when push succeeded).
+
+            ### Verify
+            ```bash
+            sha256sum -c SHA256SUMS
+            ```
+
+            Compatibility: see `docs/COMPATIBILITY.md` in the repository.
+          files: |
+            dist-release/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

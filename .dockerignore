@@ -1,0 +1,14 @@
+.git
+.github
+.agents
+.codex
+.trellis
+node_modules
+**/dist
+data
+*.db
+*.db-wal
+*.db-shm
+.env
+collector/collector.env
+collector/collector.log

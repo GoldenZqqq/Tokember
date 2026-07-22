@@ -1,0 +1,38 @@
+services:
+  tokember:
+    build:
+      context: .
+      args:
+        TOKEMBER_COMMIT: ${TOKEMBER_COMMIT:?set TOKEMBER_COMMIT}
+        TOKEMBER_BUILT_AT: ${TOKEMBER_BUILT_AT:?set TOKEMBER_BUILT_AT}
+    container_name: tokember
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3147:3147"
+    volumes:
+      - ./data:/data
+    environment:
+      - NODE_ENV=production
+      - PORT=3147
+      - DB_PATH=/data/tokember.db
+      - TOKEMBER_API_KEY=${TOKEMBER_API_KEY:?set TOKEMBER_API_KEY}
+      - TOKEMBER_ADMIN_PASSWORD=${TOKEMBER_ADMIN_PASSWORD:?set TOKEMBER_ADMIN_PASSWORD}
+      - TOKEMBER_ADMIN_SECRET=${TOKEMBER_ADMIN_SECRET:-}
+      - TOKEMBER_ADMIN_SECRET_PREVIOUS=${TOKEMBER_ADMIN_SECRET_PREVIOUS:-}
+      - TOKEMBER_VIEWER_PASSWORD=${TOKEMBER_VIEWER_PASSWORD:-}
+      - TOKEMBER_VIEWER_SECRET=${TOKEMBER_VIEWER_SECRET:-}
+      - TOKEMBER_VIEWER_SECRET_PREVIOUS=${TOKEMBER_VIEWER_SECRET_PREVIOUS:-}
+      - TOKEMBER_AUTH_AUDIT_SECRET=${TOKEMBER_AUTH_AUDIT_SECRET:-}
+      - TOKEMBER_CORS_ORIGINS=${TOKEMBER_CORS_ORIGINS:-}
+      - TOKEMBER_TRUST_PROXY=${TOKEMBER_TRUST_PROXY:-false}
+      - TOKEMBER_COOKIE_SAME_SITE=${TOKEMBER_COOKIE_SAME_SITE:-lax}
+      - TOKEMBER_COOKIE_SECURE=${TOKEMBER_COOKIE_SECURE:-auto}
+      - TOKEMBER_ALLOW_LEGACY_API_KEY=${TOKEMBER_ALLOW_LEGACY_API_KEY:-true}
+      - TOKEMBER_ALERT_WEBHOOK_URL=${TOKEMBER_ALERT_WEBHOOK_URL:-}
+      - TOKEMBER_ALERT_WEBHOOK_SECRET=${TOKEMBER_ALERT_WEBHOOK_SECRET:-}
+    healthcheck:
+      test: ["CMD", "node", "/app/current/scripts/healthcheck.mjs", "http://127.0.0.1:3147/api/health/ready"]
+      interval: 15s
+      timeout: 5s
+      start_period: 10s
+      retries: 4

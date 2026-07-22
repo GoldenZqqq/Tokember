@@ -1,0 +1,35 @@
+{
+  "name": "tokember",
+  "private": true,
+  "license": "MIT",
+  "workspaces": ["contracts", "server", "collector", "web"],
+  "scripts": {
+    "dev:server": "npm run dev -w server",
+    "dev:web": "npm run dev -w web",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present && npm run test:python && npm run test:release",
+    "test:python": "python -m unittest discover -s collector -p \"test_*.py\"",
+    "test:release": "node --test scripts/release.test.mjs scripts/public-export.test.mjs scripts/public-hygiene.test.mjs",
+    "build": "npm run build --workspaces --if-present",
+    "test:dist": "npm run test:dist -w collector",
+    "test:e2e": "playwright test --grep-invert @screenshot",
+    "demo:screenshot": "playwright test --project=desktop --grep @screenshot",
+    "public:export": "node scripts/public-export.mjs",
+    "verify": "npm run typecheck && npm test && npm run build && npm run test:dist",
+    "collect": "npm run collect -w collector",
+    "collector:install": "node collector/install.mjs install",
+    "collector:doctor": "node collector/install.mjs doctor",
+    "collector:uninstall": "node collector/install.mjs uninstall",
+    "release:collector": "node scripts/package-collector-release.mjs",
+    "release:image-manifest": "node scripts/package-image-manifest.mjs"
+  },
+  "allowScripts": {
+    "better-sqlite3@11.10.0": true,
+    "esbuild@0.25.12": true,
+    "esbuild@0.27.7": true,
+    "esbuild@0.28.1": true
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.61.1"
+  }
+}

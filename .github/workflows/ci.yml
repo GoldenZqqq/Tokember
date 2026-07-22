@@ -1,0 +1,149 @@
+name: CI
+
+# Public quality gate. Never deploys to production hosts.
+# Production publish stays in deploy.yml (private monorepo ops only).
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  hygiene:
+    name: Public hygiene
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Scan working tree for private markers
+        run: node scripts/scan-public-hygiene.mjs
+
+  quality:
+    name: Quality (${{ matrix.os }})
+    needs: hygiene
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test (workspaces + Python + release contracts)
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+      - name: Collector dist smoke
+        run: npm run test:dist
+
+  browser-e2e:
+    name: Chromium critical journeys
+    needs: hygiene
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Web
+        run: npm run build -w web
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run browser E2E
+        run: npm run test:e2e
+
+  container:
+    name: Linux arm64 release container
+    needs: hygiene
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build and healthcheck arm64 release image
+        run: |
+          set -euo pipefail
+          SOURCE_DATE=$(git show -s --format=%cI "$GITHUB_SHA")
+          IMAGE="tokember-ci:$GITHUB_SHA"
+          CONTAINER=tokember-ci-gate
+          EXPECTED_RELEASE="$(node -p "require('./server/package.json').version")-${GITHUB_SHA:0:12}"
+
+          cleanup() {
+            docker rm -f "$CONTAINER" >/dev/null 2>&1 || true
+          }
+          trap cleanup EXIT
+
+          docker buildx build \
+            --platform linux/arm64 \
+            --load \
+            --build-arg TOKEMBER_COMMIT="$GITHUB_SHA" \
+            --build-arg TOKEMBER_BUILT_AT="$SOURCE_DATE" \
+            --tag "$IMAGE" .
+
+          docker run --detach --name "$CONTAINER" \
+            --env TOKEMBER_API_KEY=ci-release-write-key \
+            --env TOKEMBER_ADMIN_PASSWORD=ci-release-admin-password \
+            "$IMAGE"
+
+          for attempt in $(seq 1 45); do
+            STATUS=$(docker inspect --format='{{.State.Health.Status}}' "$CONTAINER")
+            if [ "$STATUS" = healthy ]; then
+              break
+            fi
+            if [ "$STATUS" = unhealthy ]; then
+              docker logs "$CONTAINER"
+              exit 1
+            fi
+            sleep 2
+          done
+
+          if [ "$(docker inspect --format='{{.State.Health.Status}}' "$CONTAINER")" != healthy ]; then
+            docker logs "$CONTAINER"
+            exit 1
+          fi
+          docker exec "$CONTAINER" node /app/current/scripts/healthcheck.mjs \
+            http://127.0.0.1:3147/api/health/ready "$EXPECTED_RELEASE"

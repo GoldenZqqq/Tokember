@@ -1,0 +1,47 @@
+{
+  "name": "@tokember/contracts",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./collector-observability": {
+      "types": "./src/collector-observability.ts"
+    },
+    "./source-authority": {
+      "types": "./src/source-authority.ts"
+    },
+    "./usage": {
+      "types": "./src/usage.ts"
+    },
+    "./stats": {
+      "types": "./src/stats.ts"
+    },
+    "./audit": {
+      "types": "./src/audit.ts"
+    },
+    "./attribution": {
+      "types": "./src/attribution.ts"
+    },
+    "./alerts": {
+      "types": "./src/alerts.ts"
+    },
+    "./security": {
+      "types": "./src/security.ts"
+    },
+    "./release": {
+      "types": "./src/release.ts"
+    },
+    "./device": {
+      "types": "./src/device.ts"
+    },
+    "./protocol": {
+      "types": "./src/protocol.ts"
+    }
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.0"
+  }
+}
