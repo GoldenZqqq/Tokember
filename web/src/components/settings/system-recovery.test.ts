@@ -3,6 +3,7 @@ import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import test from 'node:test'
 import type { RecoveryStatus } from '../../admin/types'
+import { withLocale } from '../../test-utils'
 import { RecoverySection } from './SystemPanel'
 
 test('recovery section renders safe operational status without internal detail', () => {
@@ -23,9 +24,9 @@ test('recovery section renders safe operational status without internal detail',
       duration_ms: 1_234,
     },
   }
-  const html = renderToStaticMarkup(createElement(RecoverySection, { recovery }))
-  assert.match(html, /数据库恢复/)
-  assert.match(html, /演练失败/)
+  const html = renderToStaticMarkup(withLocale(createElement(RecoverySection, { recovery })))
+  assert.match(html, /Database recovery/)
+  assert.match(html, /Drill failed/)
   assert.match(html, /53\.4 MB/)
   assert.match(html, /Schema/)
   assert.match(html, /1,234 ms/)

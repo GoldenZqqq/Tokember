@@ -1,14 +1,7 @@
 import type { DashboardRange } from '../analytics/date-range'
+import { useT } from '../i18n'
 
 export type RangeValue = DashboardRange
-
-const RANGE_OPTIONS: { value: RangeValue; label: string }[] = [
-  { value: 'today', label: 'Today' },
-  { value: 7, label: '7d' },
-  { value: 30, label: '30d' },
-  { value: 0, label: 'All' },
-  { value: 'custom', label: 'Custom' },
-]
 
 interface Props {
   value: RangeValue
@@ -16,9 +9,17 @@ interface Props {
 }
 
 export function RangeTabs({ value, onChange }: Props) {
+  const t = useT()
+  const options: { value: RangeValue; label: string }[] = [
+    { value: 'today', label: t('range.today') },
+    { value: 7, label: t('range.d7') },
+    { value: 30, label: t('range.d30') },
+    { value: 0, label: t('range.all') },
+    { value: 'custom', label: t('range.custom') },
+  ]
   return (
-    <div className="grid w-full shrink-0 grid-cols-[1.35fr_repeat(4,1fr)] overflow-hidden rounded-lg border border-zinc-800 sm:w-[15rem] md:flex md:w-auto" aria-label="统计时间范围">
-      {RANGE_OPTIONS.map(option => (
+    <div className="grid w-full shrink-0 grid-cols-[1.35fr_repeat(4,1fr)] overflow-hidden rounded-lg border border-zinc-800 sm:w-[15rem] md:flex md:w-auto" aria-label={t('app.ariaRange')}>
+      {options.map(option => (
         <button
           key={option.value}
           type="button"

@@ -2,24 +2,30 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 
 import type { MonthStatsRow } from '@tokember/contracts/stats'
 import type { YearMetric } from '../../analytics/date-range'
 import {
-  annualMetricValue, formatAnnualMetric, YEAR_METRIC_LABELS,
+  annualMetricValue, formatAnnualMetric, yearMetricLabelKey,
 } from '../../analytics/year-metric'
+import { useT } from '../../i18n'
 
-const MONTH_LABELS: Record<string, string> = {
-  '01': '1月', '02': '2月', '03': '3月', '04': '4月', '05': '5月', '06': '6月',
-  '07': '7月', '08': '8月', '09': '9月', '10': '10月', '11': '11月', '12': '12月',
-}
+const MONTH_KEYS = [
+  'month.m01', 'month.m02', 'month.m03', 'month.m04', 'month.m05', 'month.m06',
+  'month.m07', 'month.m08', 'month.m09', 'month.m10', 'month.m11', 'month.m12',
+] as const
 
 export function MonthlyBar({ data, metric }: { data: MonthStatsRow[]; metric: YearMetric }) {
+  const t = useT()
+  const metricLabel = t(yearMetricLabelKey(metric))
   const chartData = data.map(d => {
-    const mm = d.month.slice(-2)
-    return { label: MONTH_LABELS[mm] ?? d.month, value: annualMetricValue(d, metric) }
+    const mm = Number(d.month.slice(-2)) - 1
+    return {
+      label: MONTH_KEYS[mm] ? t(MONTH_KEYS[mm]) : d.month,
+      value: annualMetricValue(d, metric),
+    }
   })
   const max = chartData.reduce((current, row) => Math.max(current, row.value), 0)
 
   return (
     <div className="rounded-xl border border-zinc-800/50 bg-zinc-900/50 p-4">
-      <h2 className="text-sm font-medium text-zinc-400 mb-4">月度{YEAR_METRIC_LABELS[metric]}</h2>
+      <h2 className="text-sm font-medium text-zinc-400 mb-4">{t('year.monthly', { metric: metricLabel })}</h2>
       <div className="h-64">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={chartData} margin={{ top: 5, right: 5, bottom: 5, left: 5 }}>
@@ -40,7 +46,7 @@ export function MonthlyBar({ data, metric }: { data: MonthStatsRow[]; metric: Ye
               contentStyle={{ background: '#18181b', border: '1px solid #27272a', borderRadius: 8 }}
               labelStyle={{ color: '#a1a1aa' }}
               itemStyle={{ color: '#e4e4e7' }}
-              formatter={(value: number) => [formatAnnualMetric(value, metric), YEAR_METRIC_LABELS[metric]]}
+              formatter={(value: number) => [formatAnnualMetric(value, metric), metricLabel]}
             />
             <Bar dataKey="value" radius={[4, 4, 0, 0]}>
               {chartData.map((row, index) => (

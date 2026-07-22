@@ -8,6 +8,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
+import { useT } from '../i18n'
 
 const COST_COLOR = '#f97316'
 const TOKEN_COLOR = '#38bdf8'
@@ -42,6 +43,7 @@ function formatTokenTick(value: number): string {
 }
 
 function UsageTooltip({ active, label, payload }: UsageTooltipProps) {
+  const t = useT()
   const point = payload?.[0]?.payload
   if (!active || !point) return null
 
@@ -50,13 +52,13 @@ function UsageTooltip({ active, label, payload }: UsageTooltipProps) {
       <p className="mb-2 text-sm text-zinc-400 tabular-nums">{label}</p>
       <div className="space-y-1.5 text-sm">
         <div className="flex items-baseline justify-between gap-4">
-          <span className="text-zinc-400">花费</span>
+          <span className="text-zinc-400">{t('chart.cost')}</span>
           <span className="font-semibold text-orange-400 tabular-nums">${point.cost.toFixed(3)}</span>
         </div>
         <div className="flex items-baseline justify-between gap-4">
-          <span className="text-zinc-400">真实消耗 Tokens</span>
+          <span className="text-zinc-400">{t('chart.realTokens')}</span>
           <span className="font-semibold text-sky-400 tabular-nums">
-            {point.real_total_tokens.toLocaleString('zh-CN')}
+            {point.real_total_tokens.toLocaleString()}
           </span>
         </div>
       </div>
@@ -65,15 +67,16 @@ function UsageTooltip({ active, label, payload }: UsageTooltipProps) {
 }
 
 function UsageChartHeader({ isToday }: { isToday: boolean }) {
+  const t = useT()
   return (
     <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
       <h2 className="text-sm font-medium text-zinc-400">
-        {isToday ? '今日用量趋势' : '每日用量趋势'}
+        {isToday ? t('chart.todayTrend') : t('chart.dailyTrend')}
       </h2>
-      <ul className="flex list-none items-center gap-4 text-xs text-zinc-400" aria-label="图表图例">
+      <ul className="flex list-none items-center gap-4 text-xs text-zinc-400" aria-label={t('chart.legendAria')}>
         <li className="flex items-center gap-1.5">
           <span className="h-2 w-2 rounded-full bg-orange-500" aria-hidden="true" />
-          花费
+          {t('chart.cost')}
         </li>
         <li className="flex items-center gap-1.5">
           <span className="h-0.5 w-3 rounded-full bg-sky-400" aria-hidden="true" />
@@ -120,7 +123,7 @@ function UsageChart({
           <Tooltip content={<UsageTooltip />} />
           <Area
             yAxisId="cost" type="monotone" dataKey="cost" stroke={COST_COLOR}
-            strokeWidth={2} fill="url(#costGrad)" name="花费"
+            strokeWidth={2} fill="url(#costGrad)" name="Cost"
           />
           <Line
             yAxisId="tokens" type="monotone" dataKey="real_total_tokens"

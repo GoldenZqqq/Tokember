@@ -52,7 +52,7 @@ test('comparison windows preserve duration and clamp month-end and leap days', (
   ), 'previous-period')
   assert.deepEqual(period, {
     since: '2026-07-08T00:00:00.000Z', until: '2026-07-10T00:00:00.000Z',
-    label: '上一周期',
+    label: 'Previous period',
   })
   const month = comparisonWindow(snapshot(
     '2024-03-31T10:00:00.000Z', '2024-04-30T10:00:00.000Z',
@@ -80,7 +80,7 @@ test('local comparison uses the runtime timezone across DST', () => {
   assert.equal(child.status, 0, child.stderr)
   assert.deepEqual(JSON.parse(child.stdout), {
     since: '2026-03-01T05:00:00.000Z', until: '2026-03-02T05:00:00.000Z',
-    label: '上周同期',
+    label: 'Same days last week',
   })
 })
 

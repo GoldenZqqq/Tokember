@@ -1,8 +1,9 @@
 import type { CostCoverage } from '@tokember/contracts/stats'
 import { hasIncompleteCost } from '../cost-coverage'
+import { useT } from '../i18n'
 
 function formatTokens(value: number): string {
-  return value.toLocaleString('zh-CN')
+  return value.toLocaleString()
 }
 
 function formatPercent(value: number): string {
@@ -10,11 +11,12 @@ function formatPercent(value: number): string {
 }
 
 export function CostCoverageNotice({ coverage }: { coverage: CostCoverage }) {
+  const t = useT()
   if (!hasIncompleteCost(coverage)) {
     return (
       <div className="flex items-center gap-2 text-xs text-emerald-400/80" role="status">
         <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" aria-hidden="true" />
-        成本覆盖 100%，当前区间内没有未计价用量
+        {t('coverage.full')}
       </div>
     )
   }
@@ -30,11 +32,13 @@ export function CostCoverageNotice({ coverage }: { coverage: CostCoverage }) {
           <path d="M12 17h.01" strokeLinecap="round" />
           <path d="M10.3 3.8 2.2 18a2 2 0 0 0 1.7 3h16.2a2 2 0 0 0 1.7-3L13.7 3.8a2 2 0 0 0-3.4 0Z" strokeLinejoin="round" />
         </svg>
-        成本覆盖 {formatPercent(coverage.token_ratio)}（按 Tokens）
+        {t('coverage.partial', { percent: formatPercent(coverage.token_ratio) })}
       </div>
       <p className="min-w-0 break-words text-xs leading-5 text-amber-200/75 sm:text-right">
-        {coverage.unpriced_calls.toLocaleString('zh-CN')} 次调用 ·{' '}
-        {formatTokens(coverage.unpriced_tokens)} Tokens 尚未计价，当前花费仅代表已覆盖部分
+        {t('coverage.unpricedDetail', {
+          calls: coverage.unpriced_calls.toLocaleString(),
+          tokens: formatTokens(coverage.unpriced_tokens),
+        })}
       </p>
     </div>
   )

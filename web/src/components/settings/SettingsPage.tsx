@@ -18,10 +18,12 @@ import {
   visitSettingsPanel,
   type SettingsPanelId,
 } from './settings-panels'
+import { LanguageSwitch, useT } from '../../i18n'
 
 type SessionState = 'checking' | 'anonymous' | 'authenticated' | 'error'
 
 export function SettingsPage({ onBack }: { onBack: () => void }) {
+  const t = useT()
   const [session, setSession] = useState<SessionState>('checking')
   const [sessionError, setSessionError] = useState<ApiError | null>(null)
   const [active, setActive] = useState<SettingsPanelId>(() => (
@@ -56,7 +58,7 @@ export function SettingsPage({ onBack }: { onBack: () => void }) {
       status={session === 'checking' ? 'loading' : 'error'}
       error={sessionError}
       empty={false}
-      loadingLabel="验证管理员会话…"
+      loadingLabel={t('settings.verifying')}
       emptyLabel=""
       onRetry={() => { loadSession() }}
     >{null}</ResourceView>
@@ -70,13 +72,17 @@ export function SettingsPage({ onBack }: { onBack: () => void }) {
       <header className="mb-6 flex items-center justify-between border-b border-white/[0.06] pb-5">
         <button onClick={onBack} className="flex items-center gap-3 text-left">
           <img src="/icon-192.png" alt="" className="h-10 w-10 rounded-xl" />
-          <span><span className="block text-lg font-bold text-zinc-100">Tokember 设置</span><span className="block text-xs text-zinc-600">Admin Console</span></span>
+          <span>
+            <span className="block text-lg font-bold text-zinc-100">{t('settings.title')}</span>
+            <span className="block text-xs text-zinc-600">{t('settings.subtitle')}</span>
+          </span>
         </button>
         <div className="flex items-center gap-2">
-          <button onClick={onBack} className="rounded-lg px-3 py-2 text-sm text-zinc-400 hover:bg-white/[0.05] hover:text-zinc-200">返回仪表盘</button>
+          <LanguageSwitch className="hidden sm:inline-flex" />
+          <button onClick={onBack} className="rounded-lg px-3 py-2 text-sm text-zinc-400 hover:bg-white/[0.05] hover:text-zinc-200">{t('settings.back')}</button>
         </div>
       </header>
-      <div className="grid gap-5 md:grid-cols-[13rem_minmax(0,1fr)] md:gap-7">
+      <div className="grid min-w-0 gap-5 md:grid-cols-[13rem_minmax(0,1fr)] md:gap-7">
         <SettingsSidebar active={active} onSelect={panel => {
           setVisited(current => visitSettingsPanel(current, panel))
           setActive(panel)

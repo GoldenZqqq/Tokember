@@ -46,7 +46,7 @@ test('comparison request waits for primary and reuses its ledger snapshot', asyn
     assert.equal(compared.get('snapshot_max_id'), '7')
     assert.equal(compared.get('since'), '2026-07-08T00:00:00.000Z')
     assert.equal(compared.get('until'), '2026-07-10T00:00:00.000Z')
-    assert.equal(stats.comparison?.label, '上一周期')
+    assert.equal(stats.comparison?.label, 'Previous period')
     assert.equal(stats.comparison?.stats.snapshot.max_record_id, 7)
   } finally {
     globalThis.fetch = original

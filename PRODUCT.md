@@ -45,8 +45,8 @@ minimal visual ceremony.
    reveal context without forcing navigation.
 3. Keep the product quiet until something needs attention; reserve accent color
    for active state, primary data, and meaningful status.
-4. Prefer familiar dashboard patterns and concise Chinese copy over invented
-   interaction models.
+4. Prefer familiar dashboard patterns and concise product copy. Default UI
+   language is English; Chinese is available via explicit user preference.
 5. Preserve density without sacrificing legibility, especially for numbers and
    model/provider names.
 

@@ -6,34 +6,52 @@ import type {
 } from '@tokember/contracts/collector-observability'
 import { adminApi, type DeviceSummary } from '../../admin/api'
 import { toApiError, type ApiError } from '../../data/api-client'
+import { useT, type TranslateFn } from '../../i18n'
 import { providerDisplayName } from '../../provider-display'
 import { ReadFeedback } from '../ReadFeedback'
 import { DeviceCredentialPanel } from './DeviceCredentialPanel'
-
-const HEALTH_META: Record<CollectorDeviceStatus, { label: string; className: string }> = {
-  healthy: { label: '健康', className: 'bg-emerald-500/10 text-emerald-300' },
-  degraded: { label: '异常', className: 'bg-amber-500/10 text-amber-300' },
-  offline: { label: '离线', className: 'bg-white/[0.04] text-zinc-400' },
-  never: { label: '待上报', className: 'bg-white/[0.04] text-zinc-500' },
-}
-
-const SOURCE_META: Record<CollectorSourceStatus, { label: string; className: string }> = {
-  success: { label: '成功', className: 'text-emerald-300' },
-  collection_failed: { label: '采集失败', className: 'text-rose-300' },
-  upload_failed: { label: '上传失败', className: 'text-amber-300' },
-}
 
 const PLATFORM_LABELS = {
   windows: 'Windows', macos: 'macOS', linux: 'Linux', other: 'Other',
 } as const
 
-function machineDescription(device: DeviceSummary): string {
+function healthMeta(status: CollectorDeviceStatus, t: TranslateFn): { label: string; className: string } {
+  const styles: Record<CollectorDeviceStatus, string> = {
+    healthy: 'bg-emerald-500/10 text-emerald-300',
+    degraded: 'bg-amber-500/10 text-amber-300',
+    offline: 'bg-white/[0.04] text-zinc-400',
+    never: 'bg-white/[0.04] text-zinc-500',
+  }
+  const labels: Record<CollectorDeviceStatus, string> = {
+    healthy: t('health.healthy'),
+    degraded: t('health.degraded'),
+    offline: t('health.offline'),
+    never: t('health.never'),
+  }
+  return { label: labels[status], className: styles[status] }
+}
+
+function sourceMeta(status: CollectorSourceStatus, t: TranslateFn): { label: string; className: string } {
+  const styles: Record<CollectorSourceStatus, string> = {
+    success: 'text-emerald-300',
+    collection_failed: 'text-rose-300',
+    upload_failed: 'text-amber-300',
+  }
+  const labels: Record<CollectorSourceStatus, string> = {
+    success: t('health.success'),
+    collection_failed: t('health.collectionFailed'),
+    upload_failed: t('health.uploadFailed'),
+  }
+  return { label: labels[status], className: styles[status] }
+}
+
+function machineDescription(device: DeviceSummary, t: TranslateFn): string {
   const values = [
     device.platform ? PLATFORM_LABELS[device.platform] : null,
     device.architecture,
     device.hostname,
   ].filter((value): value is string => Boolean(value))
-  return values.join(' · ') || '等待机器元数据上报'
+  return values.join(' · ') || t('devicesUi.waitingMeta')
 }
 
 function parseTime(value: string | null): number | null {
@@ -43,32 +61,40 @@ function parseTime(value: string | null): number | null {
   return Number.isFinite(time) ? time : null
 }
 
-function formatDuration(ms: number): string {
+function formatDuration(ms: number, t: TranslateFn): string {
   const seconds = Math.max(0, Math.round(ms / 1000))
-  if (seconds < 60) return `${seconds} 秒`
+  if (seconds < 60) return t('relative.seconds', { n: seconds })
   const minutes = Math.round(seconds / 60)
-  if (minutes < 60) return `${minutes} 分钟`
+  if (minutes < 60) return t('relative.minutes', { n: minutes })
   const hours = Math.round(minutes / 60)
-  if (hours < 24) return `${hours} 小时`
-  return `${Math.round(hours / 24)} 天`
+  if (hours < 24) return t('relative.hours', { n: hours })
+  return t('relative.days', { n: Math.round(hours / 24) })
 }
 
-function formatRelative(value: string | null): string {
+function formatRelative(value: string | null, t: TranslateFn): string {
   const time = parseTime(value)
-  return time == null ? '从未' : `${formatDuration(Date.now() - time)}前`
+  if (time == null) return t('devicesUi.never')
+  const seconds = Math.max(0, Math.round((Date.now() - time) / 1000))
+  if (seconds < 60) return t('relative.secondsAgo', { n: seconds })
+  const minutes = Math.round(seconds / 60)
+  if (minutes < 60) return t('relative.minutesAgo', { n: minutes })
+  const hours = Math.round(minutes / 60)
+  if (hours < 24) return t('relative.hoursAgo', { n: hours })
+  return t('relative.daysAgo', { n: Math.round(hours / 24) })
 }
 
-function formatSchedule(minutes: number | null): string {
-  if (minutes == null) return '未上报'
-  if (minutes % 60 === 0) return `每 ${minutes / 60} 小时`
-  return `每 ${minutes} 分钟`
+function formatSchedule(minutes: number | null, t: TranslateFn): string {
+  if (minutes == null) return t('devicesUi.notReported')
+  if (minutes % 60 === 0) return t('devicesUi.everyHours', { n: minutes / 60 })
+  return t('devicesUi.everyMinutes', { n: minutes })
 }
 
-function formatOutcome(value: number | null): string {
-  return value == null ? '未知' : value.toLocaleString('zh-CN')
+function formatOutcome(value: number | null, t: TranslateFn): string {
+  return value == null ? t('common.unknown') : value.toLocaleString()
 }
 
 export function DevicesPanel() {
+  const t = useT()
   const [devices, setDevices] = useState<DeviceSummary[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<ApiError | null>(null)
@@ -92,14 +118,14 @@ export function DevicesPanel() {
       <PanelHeader onRefresh={() => { load() }} />
       <ReadFeedback
         loading={loading} hasData={devices.length > 0} error={error}
-        label="加载设备中…" onRetry={() => { load() }}
+        label={t('devicesUi.loading')} onRetry={() => { load() }}
       />
       {devices.length > 0 || (!loading && !error) ? <DeviceSummaryBar devices={devices} /> : null}
       <DeviceCredentialPanel devices={devices} />
       <section className="space-y-3">
         {!loading && !error && devices.length === 0 ? (
           <div className="rounded-xl border border-dashed border-white/10 p-8 text-center text-sm text-zinc-500">
-            尚无完整采集运行。Collector 注册并完成一次运行后，这里会显示来源状态。
+            {t('devicesUi.empty')}
           </div>
         ) : devices.map(device => <DeviceCard key={device.id} device={device} />)}
       </section>
@@ -108,33 +134,35 @@ export function DevicesPanel() {
 }
 
 function PanelHeader({ onRefresh }: { onRefresh: () => void }) {
+  const t = useT()
   return (
     <header className="flex flex-wrap items-start justify-between gap-3">
       <div>
-        <h2 className="text-2xl font-bold tracking-tight text-zinc-100">设备与采集器</h2>
+        <h2 className="text-2xl font-bold tracking-tight text-zinc-100">{t('devicesUi.title')}</h2>
         <p className="mt-2 max-w-2xl text-sm leading-relaxed text-zinc-400">
-          健康状态以完成的采集运行计算；注册心跳、来源扫描和用量上传分别记录。
+          {t('devicesUi.subtitle')}
         </p>
       </div>
       <button
         type="button" onClick={onRefresh}
         className="rounded-lg border border-white/10 px-3 py-2 text-sm text-zinc-300 transition hover:border-white/20 hover:bg-white/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/60"
       >
-        刷新
+        {t('common.refresh')}
       </button>
     </header>
   )
 }
 
 function DeviceSummaryBar({ devices }: { devices: DeviceSummary[] }) {
+  const t = useT()
   const count = (status: CollectorDeviceStatus) =>
     devices.filter(device => device.collector.status === status).length
   return (
     <dl className="flex flex-wrap divide-x divide-white/[0.06] rounded-xl border border-white/[0.06] bg-zinc-900/45 px-2 py-3">
-      <SummaryMetric label="设备" value={devices.length} />
-      <SummaryMetric label="健康" value={count('healthy')} tone="text-emerald-300" />
-      <SummaryMetric label="异常" value={count('degraded')} tone="text-amber-300" />
-      <SummaryMetric label="离线 / 待上报" value={count('offline') + count('never')} />
+      <SummaryMetric label={t('devicesUi.devices')} value={devices.length} />
+      <SummaryMetric label={t('devicesUi.healthy')} value={count('healthy')} tone="text-emerald-300" />
+      <SummaryMetric label={t('devicesUi.degraded')} value={count('degraded')} tone="text-amber-300" />
+      <SummaryMetric label={t('devicesUi.offlinePending')} value={count('offline') + count('never')} />
     </dl>
   )
 }
@@ -151,14 +179,15 @@ function SummaryMetric({ label, value, tone = 'text-zinc-200' }: {
 }
 
 export function DeviceCard({ device }: { device: DeviceSummary }) {
+  const t = useT()
   const collector = device.collector
-  const health = HEALTH_META[collector.status]
+  const health = healthMeta(collector.status, t)
   return (
     <article className="rounded-xl border border-white/[0.07] bg-zinc-900/45 p-4 md:p-5">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h3 className="truncate text-sm font-semibold text-zinc-100">{device.name}</h3>
-          <p className="mt-0.5 truncate text-[11px] text-zinc-500">{machineDescription(device)}</p>
+          <p className="mt-0.5 truncate text-[11px] text-zinc-500">{machineDescription(device, t)}</p>
           <p className="mt-0.5 truncate font-mono text-[10px] text-zinc-600">{device.id}</p>
         </div>
         <span className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${health.className}`}>
@@ -167,18 +196,18 @@ export function DeviceCard({ device }: { device: DeviceSummary }) {
         </span>
       </div>
       <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 lg:grid-cols-4">
-        <Metric label="最近成功" value={formatRelative(collector.last_successful_at)} />
-        <Metric label="采集周期" value={formatSchedule(collector.latest_run?.schedule_interval_minutes ?? null)} />
-        <Metric label="本轮耗时" value={collector.latest_run ? formatDuration(collector.latest_run.duration_ms) : '—'} />
-        <Metric label="最新用量" value={formatRelative(device.last_record_at)} />
+        <Metric label={t('devicesUi.lastSuccess')} value={formatRelative(collector.last_successful_at, t)} />
+        <Metric label={t('devicesUi.schedule')} value={formatSchedule(collector.latest_run?.schedule_interval_minutes ?? null, t)} />
+        <Metric label={t('devicesUi.runDuration')} value={collector.latest_run ? formatDuration(collector.latest_run.duration_ms, t) : '—'} />
+        <Metric label={t('devicesUi.latestUsage')} value={formatRelative(device.last_record_at, t)} />
       </dl>
       <p className="mt-3 text-xs text-zinc-500">
-        最近注册 {formatRelative(device.last_seen_at)}
+        {t('devicesUi.lastRegistered', { time: formatRelative(device.last_seen_at, t) })}
         {collector.freshness_threshold_minutes != null
-          ? ` · ${collector.freshness_threshold_minutes} 分钟无完整运行后判定离线`
+          ? t('devicesUi.offlineAfter', { minutes: collector.freshness_threshold_minutes })
           : collector.latest_run
-            ? ' · 各工具按自身采集周期判断健康状态'
-            : ' · 等待首个完整运行'}
+            ? t('devicesUi.perToolHealth')
+            : t('devicesUi.waitingFirstRun')}
       </p>
       <SourceDetails sources={collector.sources} />
     </article>
@@ -186,15 +215,16 @@ export function DeviceCard({ device }: { device: DeviceSummary }) {
 }
 
 function SourceDetails({ sources }: { sources: CollectorSourceHealth[] }) {
+  const t = useT()
   if (sources.length === 0) {
-    return <p className="mt-4 border-t border-white/[0.06] pt-3 text-xs text-zinc-500">暂无来源级运行数据</p>
+    return <p className="mt-4 border-t border-white/[0.06] pt-3 text-xs text-zinc-500">{t('devicesUi.noSourceData')}</p>
   }
   return (
     <details className="group mt-4 border-t border-white/[0.06] pt-3">
       <summary className="flex cursor-pointer list-none items-center justify-between rounded-md py-1 text-sm font-medium text-zinc-300 outline-none transition hover:text-zinc-100 focus-visible:ring-2 focus-visible:ring-orange-500/60">
-        <span>工具来源 · {sources.length}</span>
-        <span className="text-xs text-zinc-500 group-open:hidden">展开</span>
-        <span className="hidden text-xs text-zinc-500 group-open:inline">收起</span>
+        <span>{t('devicesUi.toolSources', { n: sources.length })}</span>
+        <span className="text-xs text-zinc-500 group-open:hidden">{t('devicesUi.expand')}</span>
+        <span className="hidden text-xs text-zinc-500 group-open:inline">{t('devicesUi.collapse')}</span>
       </summary>
       <div className="mt-2 divide-y divide-white/[0.06]">
         {sources.map(source => <SourceRow key={source.source} source={source} />)}
@@ -204,7 +234,8 @@ function SourceDetails({ sources }: { sources: CollectorSourceHealth[] }) {
 }
 
 function SourceRow({ source }: { source: CollectorSourceHealth }) {
-  const status = SOURCE_META[source.status]
+  const t = useT()
+  const status = sourceMeta(source.status, t)
   return (
     <section className="py-3 first:pt-2 last:pb-0">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -214,17 +245,17 @@ function SourceRow({ source }: { source: CollectorSourceHealth }) {
           </h4>
           <span className={`text-xs font-medium ${status.className}`}>{status.label}</span>
         </div>
-        <span className="text-xs text-zinc-500">{formatRelative(source.finished_at)}</span>
+        <span className="text-xs text-zinc-500">{formatRelative(source.finished_at, t)}</span>
       </div>
       <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-2 text-xs sm:grid-cols-4 lg:grid-cols-8">
-        <Metric label="发现 / 扫描" value={`${source.discovered} / ${source.scanned}`} compact />
-        <Metric label="输出" value={source.emitted.toLocaleString('zh-CN')} compact />
-        <Metric label="写入" value={formatOutcome(source.accepted)} compact />
-        <Metric label="无变化" value={formatOutcome(source.unchanged)} compact />
-        <Metric label="水位" value={formatRelative(source.watermark_at)} compact />
-        <Metric label="最近用量" value={formatRelative(source.last_usage_at)} compact />
-        <Metric label="耗时" value={formatDuration(source.duration_ms)} compact />
-        <Metric label="连续失败" value={String(source.consecutive_failures)} compact />
+        <Metric label={t('devicesUi.discoveredScanned')} value={`${source.discovered} / ${source.scanned}`} compact />
+        <Metric label={t('devicesUi.emitted')} value={source.emitted.toLocaleString()} compact />
+        <Metric label={t('devicesUi.accepted')} value={formatOutcome(source.accepted, t)} compact />
+        <Metric label={t('devicesUi.unchanged')} value={formatOutcome(source.unchanged, t)} compact />
+        <Metric label={t('devicesUi.watermark')} value={formatRelative(source.watermark_at, t)} compact />
+        <Metric label={t('devicesUi.latestUsage')} value={formatRelative(source.last_usage_at, t)} compact />
+        <Metric label={t('devicesUi.duration')} value={formatDuration(source.duration_ms, t)} compact />
+        <Metric label={t('devicesUi.consecutiveFailures')} value={String(source.consecutive_failures)} compact />
       </dl>
       {source.error_summary ? (
         <p className="mt-2 break-words rounded-md bg-amber-500/[0.07] px-2.5 py-2 text-xs leading-5 text-amber-200/85">

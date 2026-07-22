@@ -4,8 +4,8 @@ async function loginViewer(
   page: import('@playwright/test').Page,
   expectedHeading = 'Tokember',
 ): Promise<void> {
-  await page.getByLabel('查看密码').fill('e2e-viewer-password')
-  await page.getByRole('button', { name: '进入 Dashboard' }).click()
+  await page.getByLabel('Viewer password').fill('e2e-viewer-password')
+  await page.getByRole('button', { name: 'Enter dashboard' }).click()
   await expect(page.getByRole('heading', { name: expectedHeading, exact: true })).toBeVisible()
 }
 
@@ -20,8 +20,8 @@ async function expectNoHorizontalOverflow(page: import('@playwright/test').Page)
 test('viewer reaches the dashboard and keeps the viewport contained', async ({ page }) => {
   await page.goto('/')
   await loginViewer(page)
-  await expect(page.getByRole('heading', { name: '今日用量趋势' })).toBeVisible()
-  await expect(page.getByRole('combobox', { name: '筛选设备' })).toContainText('Demo Device')
+  await expect(page.getByRole('heading', { name: 'Today usage trend' })).toBeVisible()
+  await expect(page.getByRole('combobox', { name: 'Filter devices' })).toContainText('Demo Device')
   await expectNoHorizontalOverflow(page)
 })
 
@@ -29,18 +29,18 @@ test('viewer can drill into a source', async ({ page }) => {
   await page.goto('/#/source?provider=codex&range=30')
   await loginViewer(page, 'Codex')
   await expect(page.getByRole('heading', { name: 'Codex' })).toBeVisible()
-  await expect(page.getByText('工具调用账本')).toBeVisible()
-  await expect(page.getByRole('heading', { name: '模型分布' })).toBeVisible()
+  await expect(page.getByText('Tool call ledger')).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Model distribution' })).toBeVisible()
   await expectNoHorizontalOverflow(page)
 })
 
 test('admin can inspect device and source health', async ({ page }) => {
   await page.goto('/#/settings?panel=devices')
-  await page.getByLabel('管理员密码').fill('e2e-admin-password')
-  await page.getByRole('button', { name: '进入设置中心' }).click()
-  await expect(page.getByRole('heading', { name: '设备与采集器' })).toBeVisible()
+  await page.getByLabel('Admin password').fill('e2e-admin-password')
+  await page.getByRole('button', { name: 'Open settings' }).click()
+  await expect(page.getByRole('heading', { name: 'Devices & collector' })).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Demo Device' })).toBeVisible()
-  await expect(page.getByText('工具来源 · 3')).toBeVisible()
+  await expect(page.getByText('Tool sources · 3')).toBeVisible()
   await expectNoHorizontalOverflow(page)
 })
 
@@ -68,16 +68,16 @@ test('first-use empty state gives a real collection path', async ({ page }) => {
   })
   await page.goto('/')
   await loginViewer(page)
-  await expect(page.getByRole('heading', { name: '开始采集你的第一条用量' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Collect your first usage' })).toBeVisible()
   await expect(page.getByText('node collector/install.mjs doctor')).toBeVisible()
-  await expect(page.getByRole('link', { name: '打开设备设置' })).toHaveAttribute('href', '#/settings?panel=devices')
+  await expect(page.getByRole('link', { name: 'Open device settings' })).toHaveAttribute('href', '#/settings?panel=devices')
   await expectNoHorizontalOverflow(page)
 })
 
 test('captures the current demo dashboard @screenshot', async ({ page }) => {
   await page.goto('/')
   await loginViewer(page)
-  await expect(page.getByRole('heading', { name: '今日用量趋势' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Today usage trend' })).toBeVisible()
   await page.getByRole('heading', { name: 'Tokember' }).hover()
   await page.screenshot({ path: 'docs/images/dashboard.png', fullPage: true })
 })

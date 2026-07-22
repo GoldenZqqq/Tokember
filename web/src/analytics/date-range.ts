@@ -215,22 +215,23 @@ export function comparisonWindow(
   snapshot: QuerySnapshot,
   mode: Exclude<ComparisonMode, 'none'>,
 ): ComparisonWindow {
+  // Labels are English defaults; UI maps comparison.mode through i18n when rendering.
   if (mode === 'previous-period') {
     const duration = Date.parse(snapshot.until) - Date.parse(snapshot.since)
     return {
       since: new Date(Date.parse(snapshot.since) - duration).toISOString(),
-      until: snapshot.since, label: '上一周期',
+      until: snapshot.since, label: 'Previous period',
     }
   }
   if (mode === 'previous-week') {
     return shiftedWindow(snapshot, value => {
       value.setDate(value.getDate() - 7); return value
-    }, '上周同期')
+    }, 'Same days last week')
   }
   if (mode === 'previous-month') {
-    return shiftedWindow(snapshot, value => shiftMonth(value, -1), '上月同期')
+    return shiftedWindow(snapshot, value => shiftMonth(value, -1), 'Same days last month')
   }
-  return shiftedWindow(snapshot, value => shiftYear(value, -1), '去年同期')
+  return shiftedWindow(snapshot, value => shiftYear(value, -1), 'Same days last year')
 }
 
 export function numericDelta(current: number, previous: number): NumericDelta {

@@ -3,48 +3,53 @@ import test from 'node:test'
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { ApiError } from '../data/api-client'
+import { withLocale } from '../test-utils'
 import { ReadFeedback } from './ReadFeedback'
 import { ResourceView } from './ResourceView'
 
+function render(node: React.ReactElement) {
+  return renderToStaticMarkup(withLocale(node))
+}
+
 test('terminal resource error renders retry instead of empty data', () => {
-  const html = renderToStaticMarkup(createElement(ResourceView, {
-    status: 'error', error: new ApiError('network', '网络不可用'), empty: false,
-    loadingLabel: '加载中', emptyLabel: '没有数据', onRetry: () => {}, children: null,
+  const html = render(createElement(ResourceView, {
+    status: 'error', error: new ApiError('network', 'Network unavailable'), empty: false,
+    loadingLabel: 'Loading', emptyLabel: 'No data', onRetry: () => {}, children: null,
   }))
-  assert.match(html, /网络不可用/)
-  assert.match(html, /重试/)
-  assert.doesNotMatch(html, /没有数据/)
+  assert.match(html, /Network unavailable/)
+  assert.match(html, /Retry/)
+  assert.doesNotMatch(html, /No data/)
 })
 
 test('stale resource keeps children and labels retained data', () => {
-  const html = renderToStaticMarkup(createElement(ResourceView, {
-    status: 'stale', error: new ApiError('server', '服务失败'), empty: false,
-    loadingLabel: '加载中', emptyLabel: '没有数据', onRetry: () => {},
-    children: createElement('p', null, '已有统计'),
+  const html = render(createElement(ResourceView, {
+    status: 'stale', error: new ApiError('server', 'Server failed'), empty: false,
+    loadingLabel: 'Loading', emptyLabel: 'No data', onRetry: () => {},
+    children: createElement('p', null, 'Existing stats'),
   }))
-  assert.match(html, /显示上次成功数据/)
-  assert.match(html, /已有统计/)
+  assert.match(html, /Showing last successful data/)
+  assert.match(html, /Existing stats/)
 })
 
 test('valid empty resource is distinct from an error', () => {
-  const html = renderToStaticMarkup(createElement(ResourceView, {
+  const html = render(createElement(ResourceView, {
     status: 'ready', error: null, empty: true,
-    loadingLabel: '加载中', emptyLabel: '当前范围没有记录',
-    onRetry: () => {}, children: createElement('p', null, '不应出现'),
+    loadingLabel: 'Loading', emptyLabel: 'No records in range',
+    onRetry: () => {}, children: createElement('p', null, 'Should not appear'),
   }))
-  assert.match(html, /当前范围没有记录/)
-  assert.doesNotMatch(html, /重试|不应出现/)
+  assert.match(html, /No records in range/)
+  assert.doesNotMatch(html, /Retry|Should not appear/)
 })
 
 test('admin read feedback distinguishes initial and retained-data failures', () => {
-  const error = new ApiError('timeout', '请求超时')
-  const initial = renderToStaticMarkup(createElement(ReadFeedback, {
-    loading: false, hasData: false, error, label: '加载', onRetry: () => {},
+  const error = new ApiError('timeout', 'Request timed out')
+  const initial = render(createElement(ReadFeedback, {
+    loading: false, hasData: false, error, label: 'Loading', onRetry: () => {},
   }))
-  const stale = renderToStaticMarkup(createElement(ReadFeedback, {
-    loading: false, hasData: true, error, label: '加载', onRetry: () => {},
+  const stale = render(createElement(ReadFeedback, {
+    loading: false, hasData: true, error, label: 'Loading', onRetry: () => {},
   }))
-  assert.match(initial, /请求超时/)
-  assert.doesNotMatch(initial, /上次成功/)
-  assert.match(stale, /显示上次成功数据/)
+  assert.match(initial, /Request timed out/)
+  assert.doesNotMatch(initial, /last successful|Showing last/)
+  assert.match(stale, /Showing last successful data/)
 })

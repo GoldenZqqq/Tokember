@@ -1,8 +1,9 @@
 import type { Stats } from '../dashboard-stats'
 import type { AuditDimension } from '../audit/query'
+import { useT } from '../i18n'
 
 function number(value: number): string {
-  return value.toLocaleString('zh-CN')
+  return value.toLocaleString()
 }
 
 function shortSession(value: string): string {
@@ -25,30 +26,31 @@ export function AttributionBreakdown({
   stats: Stats
   onAudit: (dimension: AuditDimension) => void
 }) {
+  const t = useT()
   const captured = stats.attribution.find(row => row.status === 'captured')
   if (!captured || captured.records === 0) return null
   return <section className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 md:p-5">
     <div className="flex flex-wrap items-end justify-between gap-2">
       <div>
-        <h2 className="text-sm font-semibold text-zinc-200">项目与会话</h2>
-        <p className="mt-1 text-xs text-zinc-600">匿名归因数据，点击条目进入同一快照审计。</p>
+        <h2 className="text-sm font-semibold text-zinc-200">{t('attribution.title')}</h2>
+        <p className="mt-1 text-xs text-zinc-600">{t('attribution.subtitle')}</p>
       </div>
       <Metric requests={captured.requests} tokens={captured.real_total_tokens}
         cost={captured.cost} />
     </div>
     <div className="mt-4 grid gap-4 lg:grid-cols-2">
       <div className="space-y-2">
-        <p className="text-xs font-medium text-zinc-500">项目</p>
+        <p className="text-xs font-medium text-zinc-500">{t('attribution.projects')}</p>
         {stats.by_project.length ? stats.by_project.slice(0, 6).map(project => <button
           type="button" key={project.group_id ?? project.name}
           onClick={() => onAudit({ project_group_id: project.group_id ?? undefined })}
           className="flex w-full flex-col gap-1 rounded-lg border border-white/[0.05] px-3 py-2 text-left hover:border-white/10 focus-visible:outline-2 focus-visible:outline-orange-500">
           <span className="truncate text-sm text-zinc-300">{project.name}</span>
           <Metric requests={project.requests} tokens={project.real_total_tokens} cost={project.cost} />
-        </button>) : <p className="text-xs text-zinc-600">当前记录仅包含会话归因。</p>}
+        </button>) : <p className="text-xs text-zinc-600">{t('attribution.sessionsOnly')}</p>}
       </div>
       <div className="space-y-2">
-        <p className="text-xs font-medium text-zinc-500">会话</p>
+        <p className="text-xs font-medium text-zinc-500">{t('attribution.sessions')}</p>
         {stats.by_session.slice(0, 6).map(session => <button type="button"
           key={session.session_id} onClick={() => onAudit({ session_id: session.session_id })}
           className="flex w-full flex-col gap-1 rounded-lg border border-white/[0.05] px-3 py-2 text-left hover:border-white/10 focus-visible:outline-2 focus-visible:outline-orange-500">

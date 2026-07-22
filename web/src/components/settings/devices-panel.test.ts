@@ -3,6 +3,7 @@ import test from 'node:test'
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import type { DeviceSummary } from '../../admin/types'
+import { withLocale } from '../../test-utils'
 import { DeviceCard } from './DevicesPanel'
 import { OneTimeToken } from './DeviceCredentialPanel'
 
@@ -24,31 +25,31 @@ const device: DeviceSummary = {
       source: 'gemini', status: 'upload_failed', discovered: 7, scanned: 6,
       emitted: 2, accepted: null, unchanged: null, watermark_at: null,
       last_usage_at: '2026-07-17T00:58:00.000Z', duration_ms: 900,
-      error_summary: '上传失败', finished_at: '2026-07-17T01:00:00.000Z',
+      error_summary: 'upload failed', finished_at: '2026-07-17T01:00:00.000Z',
       consecutive_failures: 2,
     }],
   },
 }
 
 test('device card explains dynamic health and source-level failures', () => {
-  const html = renderToStaticMarkup(createElement(DeviceCard, { device }))
+  const html = renderToStaticMarkup(withLocale(createElement(DeviceCard, { device })))
 
-  assert.match(html, /异常/)
-  assert.match(html, /每 30 分钟/)
-  assert.match(html, /75 分钟无完整运行后判定离线/)
+  assert.match(html, /Degraded/)
+  assert.match(html, /Every 30 minutes/)
+  assert.match(html, /offline after 75 min without a complete run/)
   assert.match(html, /Windows · x64 · desktop-1/)
   assert.match(html, /Gemini/)
-  assert.match(html, /工具来源/)
-  assert.match(html, /采集失败|上传失败/)
-  assert.match(html, /发现 \/ 扫描/)
-  assert.match(html, /未知/)
+  assert.match(html, /Tool sources/)
+  assert.match(html, /Collection failed|Upload failed/)
+  assert.match(html, /Discovered \/ scanned/)
+  assert.match(html, /Unknown/)
 })
 
 test('one-time device token is explicit and contains no public warning copy', () => {
-  const html = renderToStaticMarkup(createElement(OneTimeToken, {
+  const html = renderToStaticMarkup(withLocale(createElement(OneTimeToken, {
     token: 'tkdc_abcdefghijkl_abcdefghijklmnopqrstuvwxyz123456', onClear: () => {},
-  }))
-  assert.match(html, /仅显示一次|不会再次显示/)
+  })))
+  assert.match(html, /will not be shown again|Copy now/)
   assert.match(html, /tkdc_abcdefghijkl/)
   assert.doesNotMatch(html, /成本覆盖|尚未计价|预算|来源健康/)
 })

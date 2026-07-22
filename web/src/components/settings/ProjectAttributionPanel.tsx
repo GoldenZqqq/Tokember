@@ -11,6 +11,7 @@ import {
   beginResource, failResource, initialResource, succeedResource,
   type ResourceState,
 } from '../../data/resource-state'
+import { useT } from '../../i18n'
 import { ReadFeedback } from '../ReadFeedback'
 
 function shortId(value: string): string {
@@ -18,7 +19,7 @@ function shortId(value: string): string {
 }
 
 function metric(value: number): string {
-  return value.toLocaleString('zh-CN')
+  return value.toLocaleString()
 }
 
 function useProjectAttribution() {
@@ -56,6 +57,7 @@ function ProjectMemberRow({
   groups: ProjectAttributionGroup[]
   mutate: (action: () => Promise<unknown>, success: string) => Promise<void>
 }) {
+  const t = useT()
   return <div className="grid gap-3 rounded-lg border border-white/[0.05] px-3 py-3 lg:grid-cols-[minmax(0,1fr)_minmax(10rem,14rem)] lg:items-end">
     <div className="min-w-0">
       <p className="truncate text-sm text-zinc-300">{member.device_name}</p>
@@ -67,17 +69,17 @@ function ProjectMemberRow({
       </p>
     </div>
     {groups.length > 1 ? <label className="text-xs text-zinc-500">
-      <span className="mb-1.5 block">显式合并到</span>
+      <span className="mb-1.5 block">{t('attributionUi.mergeInto')}</span>
       <select className="field-input" defaultValue="" onChange={event => {
         const target = Number(event.target.value)
         if (target) mutate(
           () => adminApi.mergeProject(member.device_id, member.project_id, target),
-          '项目成员已显式合并',
+          t('attributionUi.merged'),
         )
       }}>
-        <option value="">选择目标项目组</option>
+        <option value="">{t('attributionUi.selectTarget')}</option>
         {groups.filter(target => target.id !== group.id).map(target => <option
-          key={target.id} value={target.id}>{target.display_name || `项目 ${target.id}`}</option>)}
+          key={target.id} value={target.id}>{target.display_name || t('attributionUi.projectN', { id: target.id })}</option>)}
       </select>
     </label> : null}
   </div>
@@ -92,23 +94,24 @@ function ProjectGroupCard({
   onDraft: (value: string) => void
   mutate: (action: () => Promise<unknown>, success: string) => Promise<void>
 }) {
+  const t = useT()
   return <section className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
     <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
       <label className="min-w-0 flex-1 text-xs text-zinc-500">
-        <span className="mb-1.5 block">项目组 #{group.id} 展示名称</span>
-        <input className="field-input" value={draft} placeholder={`项目 ${group.id}`}
+        <span className="mb-1.5 block">{t('attributionUi.displayName', { id: group.id })}</span>
+        <input className="field-input" value={draft} placeholder={t('attributionUi.projectN', { id: group.id })}
           onChange={event => onDraft(event.target.value)} />
       </label>
       <div className="flex flex-wrap gap-2">
         <button type="button" className="rounded-lg bg-orange-500 px-3 py-2 text-sm font-semibold text-black"
           onClick={() => mutate(
             () => adminApi.updateProjectGroupName(group.id, draft.trim() || null),
-            '项目名称已保存',
-          )}>保存名称</button>
+            t('attributionUi.nameSaved'),
+          )}>{t('attributionUi.saveName')}</button>
         <button type="button" className="rounded-lg border border-white/10 px-3 py-2 text-sm text-zinc-300"
           onClick={() => mutate(
-            () => adminApi.updateProjectGroupName(group.id, null), '展示名称已清除',
-          )}>清除名称</button>
+            () => adminApi.updateProjectGroupName(group.id, null), t('attributionUi.nameCleared'),
+          )}>{t('attributionUi.clearName')}</button>
       </div>
     </div>
     <p className="mt-3 text-xs tabular-nums text-zinc-600">
@@ -121,22 +124,23 @@ function ProjectGroupCard({
 }
 
 export function ProjectAttributionPanel() {
+  const t = useT()
   const resource = useProjectAttribution()
   const data = resource.state.data
   return <div className="space-y-5">
     <header>
-      <h2 className="text-2xl font-bold tracking-tight text-zinc-100">项目归因</h2>
+      <h2 className="text-2xl font-bold tracking-tight text-zinc-100">{t('attributionUi.title')}</h2>
       <p className="mt-2 max-w-3xl text-sm leading-6 text-zinc-500">
-        管理匿名项目的友好名称与跨设备显式合并。名称相同不会自动合并，用量账本也不会因改名而改变。
+        {t('attributionUi.subtitle')}
       </p>
     </header>
     <ReadFeedback loading={resource.state.status === 'loading' || resource.state.status === 'refreshing'}
-      hasData={data != null} error={resource.state.error} label="加载项目归因…" onRetry={resource.load} />
+      hasData={data != null} error={resource.state.error} label={t('attributionUi.loading')} onRetry={resource.load} />
     {resource.message ? <p className="rounded-lg border border-white/10 px-3 py-2 text-sm text-zinc-300">
       {resource.message}
     </p> : null}
     {data?.groups.length === 0 ? <p className="rounded-xl border border-dashed border-white/10 p-8 text-center text-sm text-zinc-500">
-      尚无已捕获的项目归因。Collector 默认关闭，启用后新记录会出现在这里。
+      {t('attributionUi.empty')}
     </p> : null}
     {data?.groups.map(group => <ProjectGroupCard key={group.id} group={group}
       groups={data.groups} draft={resource.drafts[group.id] ?? ''}
