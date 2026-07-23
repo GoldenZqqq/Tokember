@@ -56,7 +56,7 @@ test('launch site uses repository-subpath-safe local references with real assets
   }
 })
 
-test('launch site keeps motion optional and content usable without canvas or autoplay', async () => {
+test('launch site keeps motion optional and the canvas-only Hero accessible', async () => {
   const [html, css, script, furnace] = await Promise.all([
     read('site/index.html'),
     read('site/styles.css'),
@@ -71,12 +71,16 @@ test('launch site keeps motion optional and content usable without canvas or aut
   assert.match(furnace, /tokember-core\.glb/)
   assert.match(furnace, /wrapMotionParts/)
   assert.match(furnace, /createEmberField/)
+  assert.match(furnace, /createProceduralFlame/)
+  assert.match(furnace, /resolveCoreQuality/)
   assert.match(furnace, /pointerenter/)
   assert.match(furnace, /pointerType === 'touch'/)
   assert.match(furnace, /dataset\.coreState/)
   assert.match(html, /furnace-core\.js/)
   assert.match(html, /tokember-core\.glb/)
-  assert.match(html, /furnace-fallback/)
+  assert.doesNotMatch(html, /furnace-fallback/)
+  assert.match(html, /id="furnace-status"[^>]+role="status"/)
+  assert.match(html, /data-model-state="loading"/)
   assert.match(html, /data-core-state="compact"/)
   assert.match(html, /tabindex="0" role="img"/)
   assert.match(html, /<canvas[^>]+aria-hidden="true"/)

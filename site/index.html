@@ -65,9 +65,9 @@
             Your server. Your SQLite. No SaaS required.
           </p>
           <div class="furnace-core" aria-label="Tokember product signal. Drag to rotate the 3D mark.">
-            <div class="furnace-stage" id="furnace-stage" tabindex="0" role="img" data-core-state="compact" aria-label="Tokember furnace core. Hover or focus to unfold the mark; tap to pin it open.">
+            <div class="furnace-stage" id="furnace-stage" tabindex="0" role="img" data-core-state="compact" data-model-state="loading" aria-describedby="furnace-status" aria-label="Tokember furnace core. Hover or focus to unfold the mark; tap to pin it open.">
               <canvas class="furnace-core-canvas" id="furnace-core-canvas" aria-hidden="true"></canvas>
-              <img class="furnace-fallback" src="./assets/tokember-mark.png" alt="Tokember flame mark" width="512" height="512">
+              <span class="sr-only" id="furnace-status" role="status" aria-live="polite">Loading interactive furnace core.</span>
             </div>
             <div class="core-orbit core-orbit-a" aria-hidden="true"></div>
             <div class="core-orbit core-orbit-b" aria-hidden="true"></div>
