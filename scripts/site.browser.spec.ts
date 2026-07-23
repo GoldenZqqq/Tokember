@@ -103,6 +103,7 @@ test('renders a nonblank furnace and honors reduced motion', async ({ page }) =>
 
   await page.emulateMedia({ reducedMotion: 'reduce' })
   await expect(page.locator('#furnace-canvas')).toHaveCSS('display', 'none')
+  await expect(page.locator('#furnace-stage')).toHaveAttribute('data-flame-state', 'procedural')
   const duration = await page.locator('.core-orbit-a').evaluate(element => {
     return Number.parseFloat(getComputedStyle(element).animationDuration)
   })
@@ -114,6 +115,10 @@ test('furnace core reveals on hover, focus, and tap', async ({ page }, testInfo)
   const stage = page.locator('#furnace-stage')
   await expect(stage).toHaveAttribute('data-core-state', 'compact')
   await expect(stage).toHaveClass(/is-live/)
+  await expect(stage).toHaveAttribute('data-shell-pose', 'enclosing')
+  await expect(stage).toHaveAttribute('data-core-quality', /full|lite/)
+  await expect(page.locator('.furnace-fallback')).toHaveCount(0)
+  await stage.screenshot({ path: testInfo.outputPath('furnace-compact.png') })
 
   if (testInfo.project.name === 'mobile-320') {
     const stageOwnsItsCenter = await stage.evaluate(element => {
@@ -127,6 +132,7 @@ test('furnace core reveals on hover, focus, and tap', async ({ page }, testInfo)
   } else {
     await stage.hover()
     await expect(stage).toHaveAttribute('data-core-state', 'revealed')
+    await stage.screenshot({ path: testInfo.outputPath('furnace-revealed.png') })
     await page.mouse.move(1, 1)
     await expect(stage).toHaveAttribute('data-core-state', 'compact')
   }
@@ -140,4 +146,15 @@ test('furnace core reveals on hover, focus, and tap', async ({ page }, testInfo)
   await expect(stage).toHaveAttribute('data-core-state', 'revealed')
   await stage.dispatchEvent('click', { detail: 1 })
   await expect(stage).toHaveAttribute('data-core-state', 'compact')
+})
+
+test('procedural flame changes rendered pixels while motion is enabled', async ({ page }) => {
+  await page.goto('/')
+  const stage = page.locator('#furnace-stage')
+  await expect(stage).toHaveClass(/is-live/)
+  await expect(stage).toHaveAttribute('data-flame-state', 'procedural')
+  const first = await stage.screenshot()
+  await page.waitForTimeout(240)
+  const second = await stage.screenshot()
+  expect(first.equals(second)).toBe(false)
 })

@@ -240,7 +240,7 @@ button { font: inherit; }
 .furnace-stage {
   position: relative;
   z-index: 1;
-  width: 68%;
+  width: 76%;
   aspect-ratio: 1;
   display: grid;
   place-items: center;
@@ -284,17 +284,6 @@ button { font: inherit; }
   opacity: 1;
   pointer-events: auto;
 }
-.furnace-fallback {
-  width: 80%;
-  transition: opacity 320ms var(--ease-out);
-  filter: drop-shadow(0 0 28px oklch(67% 0.2 48 / 0.28));
-}
-.furnace-stage.is-live .furnace-fallback {
-  opacity: 0;
-  pointer-events: none;
-  position: absolute;
-}
-.furnace-core > img { width: 55%; filter: drop-shadow(0 0 28px oklch(67% 0.2 48 / 0.28)); }
 .core-orbit { position: absolute; border: 1px solid oklch(80% 0.16 59 / 0.22); border-radius: 50%; transform-origin: center; transition: opacity 520ms var(--ease-out), transform 650ms var(--ease-out); }
 .core-orbit::before { content: ""; position: absolute; width: 7px; height: 7px; border-radius: 50%; background: var(--cyan); }
 .core-orbit-a { inset: 8%; animation: orbit-turn 18s linear infinite; }
@@ -470,8 +459,7 @@ button { font: inherit; }
   .hero-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 8px; }
   .hero-actions .button { min-height: 44px; padding: 0 10px; font-size: 0.82rem; }
   .furnace-core { position: relative; top: auto; right: auto; width: min(47vw, 150px); margin: 6px auto 2px; transform: none; opacity: 0.78; pointer-events: auto; }
-  .furnace-stage { width: 72%; cursor: default; }
-  .furnace-core img, .furnace-fallback { width: 44%; }
+  .furnace-stage { width: 86%; cursor: default; }
   .core-readout { display: none; }
   .telemetry-rail { z-index: 3; grid-template-columns: repeat(3, 1fr); bottom: 32px; }
   .telemetry-rail div { padding: 12px 8px; }
