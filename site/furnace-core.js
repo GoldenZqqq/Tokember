@@ -1,19 +1,19 @@
 /**
  * Interactive Tokember furnace-core mark (three.js + glTF).
- * Falls back to the static PNG when WebGL or the model is unavailable.
+ * Uses a canvas-only 3D Hero with a procedural flame enhancement.
  */
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
+import { createProceduralFlame, resolveCoreQuality } from './furnace-flame.js'
 
 const MODEL_URL = new URL('./assets/tokember-core.glb', import.meta.url).href
-const MAX_PIXEL_RATIO = 1.75
 const IDLE_SPIN = 0.28
 const DRAG_SCALE = 0.0055
 const VELOCITY_DAMP = 0.92
 const TILT_LIMIT = 0.42
 const CORE_PARTS = new Set([
   'RingSeg_Gold', 'RingSeg_Orange', 'RingSeg_Hot',
-  'FlameTip', 'InnerCore', 'InnerGlow', 'EmberRing',
+  'InnerCore', 'InnerGlow', 'EmberRing',
 ])
 
 const BRAND_MATERIALS = {
@@ -106,21 +106,16 @@ function fitCameraToObject(camera, object, offset = 1.35) {
   camera.updateProjectionMatrix()
 }
 
-function createCompactPose(name, center, index) {
+function createCompactPose(name, center, index, expanded) {
   const isRing = name.startsWith('RingSeg_')
-  const isTip = name === 'FlameTip'
-  const scale = isRing ? 0.48 : isTip ? 0.48 : name === 'EmberRing' ? 0.74 : name === 'InnerGlow' ? 1.08 : 1
-  const targetCenter = isTip
-    ? new THREE.Vector3(0, 0.28, 0.02)
-    : center.lengthSq() > 0.001
-      ? center.clone().normalize().multiplyScalar(isRing ? 0.08 : 0.03)
-      : new THREE.Vector3()
-  const rotation = new THREE.Euler(
-    isRing ? 0.16 + center.y * 0.24 : 0,
-    isRing ? -0.2 - center.x * 0.2 : 0,
-    isRing ? (index - 1) * 0.62 : index * 0.15,
-  )
-  const quaternion = new THREE.Quaternion().setFromEuler(rotation)
+  const scale = isRing ? 0.9 : name === 'EmberRing' ? 0.74 : name === 'InnerGlow' ? 1.08 : 1
+  const direction = center.lengthSq() > 0.001
+    ? center.clone().normalize()
+    : new THREE.Vector3(Math.cos(index * 2.1), 0, Math.sin(index * 2.1)).normalize()
+  const targetCenter = direction.multiplyScalar(isRing ? 0.56 : 0.03)
+  const quaternion = isRing
+    ? expanded.quaternion.clone()
+    : new THREE.Quaternion().setFromEuler(new THREE.Euler(0, 0, index * 0.15))
   const transformedCenter = center.clone().multiplyScalar(scale).applyQuaternion(quaternion)
   return {
     position: targetCenter.sub(transformedCenter),
@@ -152,16 +147,17 @@ function wrapMotionParts(model) {
     motion.updateWorldMatrix(true, true)
     const worldCenter = new THREE.Box3().setFromObject(node).getCenter(new THREE.Vector3())
     const center = motion.worldToLocal(worldCenter)
+    const expanded = {
+      position: motion.position.clone(),
+      quaternion: motion.quaternion.clone(),
+      scale: motion.scale.clone(),
+    }
     return {
       name: node.name,
       motion,
       center,
-      expanded: {
-        position: motion.position.clone(),
-        quaternion: motion.quaternion.clone(),
-        scale: motion.scale.clone(),
-      },
-      compact: createCompactPose(node.name, center, index),
+      expanded,
+      compact: createCompactPose(node.name, center, index, expanded),
     }
   }).filter(Boolean)
 }
@@ -204,8 +200,7 @@ function createHaloLayer(texture, color, size, opacity, z) {
   return sprite
 }
 
-function createEmberField(texture) {
-  const count = 56
+function createEmberField(texture, count) {
   const random = seededRandom()
   const positions = new Float32Array(count * 3)
   const colors = new Float32Array(count * 3)
@@ -256,23 +251,34 @@ function updateEmberField(field, time, delta, reveal) {
   field.material.opacity = 0.34 + reveal * 0.2
 }
 
-function createEffects(root) {
+function createEffects(root, quality) {
   const texture = createGlowTexture()
   const group = new THREE.Group()
   const warmHalo = createHaloLayer(texture, 0xf97316, 2.7, 0.22, -0.65)
   const cyanHalo = createHaloLayer(texture, 0x36d5e0, 1.35, 0.1, -0.72)
-  const field = createEmberField(texture)
+  const field = createEmberField(texture, quality.emberCount)
   group.add(warmHalo, cyanHalo, field.points)
   root.add(group)
   return { texture, group, warmHalo, cyanHalo, field }
 }
 
-function createFurnaceCore(stage, canvas, fallback) {
-  if (!stage || !canvas || !window.WebGLRenderingContext) return () => {}
+function createFurnaceCore(stage, canvas, status) {
+  if (!stage || !canvas) return () => {}
+  if (!window.WebGLRenderingContext) {
+    stage.dataset.modelState = 'unavailable'
+    if (status) status.textContent = 'Interactive furnace core unavailable.'
+    return () => {}
+  }
+  const quality = resolveCoreQuality()
+  stage.dataset.coreQuality = quality.name
+  stage.dataset.flameState = 'procedural'
+  stage.dataset.shellPose = 'enclosing'
   let renderer
   try {
     renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true, powerPreference: 'high-performance' })
   } catch {
+    stage.dataset.modelState = 'unavailable'
+    if (status) status.textContent = 'Interactive furnace core unavailable.'
     return () => {}
   }
   renderer.setClearColor(0x000000, 0)
@@ -284,7 +290,7 @@ function createFurnaceCore(stage, canvas, fallback) {
   const camera = new THREE.PerspectiveCamera(32, 1, 0.1, 100)
   const root = new THREE.Group()
   const pivot = new THREE.Group()
-  const effects = createEffects(root)
+  const effects = createEffects(root, quality)
   root.add(pivot)
   scene.add(root)
   addLighting(scene)
@@ -294,6 +300,7 @@ function createFurnaceCore(stage, canvas, fallback) {
   let intersecting = true
   let modelReady = false
   let pieces = []
+  let flame = null
   let baseEmissive = new Map()
   let pulse = 0
   const state = {
@@ -320,17 +327,18 @@ function createFurnaceCore(stage, canvas, fallback) {
     const rect = stage.getBoundingClientRect()
     const width = Math.max(1, rect.width)
     const height = Math.max(1, rect.height)
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, MAX_PIXEL_RATIO))
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, quality.maxPixelRatio))
     renderer.setSize(width, height, false)
     camera.aspect = width / height
     camera.updateProjectionMatrix()
   }
-
   function setLive(isLive) {
     stage.classList.toggle('is-live', isLive)
-    fallback?.setAttribute('aria-hidden', isLive ? 'true' : 'false')
+    stage.dataset.modelState = isLive ? 'ready' : 'unavailable'
+    if (status) status.textContent = isLive
+      ? 'Interactive furnace core ready.'
+      : 'Interactive furnace core unavailable.'
   }
-
   function captureEmissive(object) {
     baseEmissive = new Map()
     object.traverse(node => {
@@ -361,7 +369,6 @@ function createFurnaceCore(stage, canvas, fallback) {
     state.pinned = !state.pinned
     syncTarget()
   }
-
   function updatePose(time, delta) {
     state.reveal = reducedMotion.matches
       ? state.targetReveal
@@ -381,6 +388,7 @@ function createFurnaceCore(stage, canvas, fallback) {
     effects.warmHalo.scale.setScalar(2.7 * haloScale)
     effects.cyanHalo.scale.setScalar(1.35 * haloScale)
     updateEmberField(effects.field, time, delta, state.reveal)
+    flame?.update(time, state.reveal, pulse, reducedMotion.matches)
     pulse = Math.max(0, pulse - delta * 2.4)
     updateEmissive(time)
   }
@@ -418,7 +426,6 @@ function createFurnaceCore(stage, canvas, fallback) {
     updatePose(clock.elapsedTime, 0)
     renderer.render(scene, camera)
   }
-
   function sync() {
     setRunning(intersecting && !document.hidden && modelReady && !reducedMotion.matches)
     renderStillFrame()
@@ -463,7 +470,6 @@ function createFurnaceCore(stage, canvas, fallback) {
     state.hovering = true
     syncTarget()
   }
-
   function onPointerLeave() {
     state.hovering = false
     syncTarget(false)
@@ -473,7 +479,6 @@ function createFurnaceCore(stage, canvas, fallback) {
     state.focused = true
     syncTarget()
   }
-
   function onFocusOut(event) {
     if (event.relatedTarget instanceof Node && stage.contains(event.relatedTarget)) return
     state.focused = false
@@ -488,7 +493,6 @@ function createFurnaceCore(stage, canvas, fallback) {
     }
     togglePinned()
   }
-
   function onKeyDown(event) {
     if (event.key === 'Escape') {
       state.pinned = false
@@ -507,6 +511,8 @@ function createFurnaceCore(stage, canvas, fallback) {
       applyBrandMaterials(model)
       model.rotateX(Math.PI / 2)
       pivot.add(model)
+      const flameTip = model.getObjectByName('FlameTip')
+      if (flameTip?.isMesh) flame = createProceduralFlame(pivot, flameTip, quality)
       pieces = wrapMotionParts(model)
       fitCameraToObject(camera, pivot, 1.28)
       captureEmissive(model)
@@ -557,6 +563,7 @@ function createFurnaceCore(stage, canvas, fallback) {
     stage.removeEventListener('keydown', onKeyDown)
     reducedMotion.removeEventListener?.('change', sync)
     renderer.dispose()
+    flame?.dispose()
     effects.field.geometry.dispose()
     effects.field.material.dispose()
     effects.warmHalo.material.dispose()
@@ -587,7 +594,7 @@ function addLighting(scene) {
 
 const stage = document.querySelector('#furnace-stage')
 const canvas = document.querySelector('#furnace-core-canvas')
-const fallback = document.querySelector('.furnace-fallback')
+const status = document.querySelector('#furnace-status')
 if (stage instanceof HTMLElement && canvas instanceof HTMLCanvasElement) {
-  createFurnaceCore(stage, canvas, fallback instanceof HTMLImageElement ? fallback : null)
+  createFurnaceCore(stage, canvas, status instanceof HTMLElement ? status : null)
 }
