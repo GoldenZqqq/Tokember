@@ -131,10 +131,13 @@ test('ModelTable keeps model names readable on narrow viewports', () => {
       },
     ],
   })))
-  // Horizontal scroll + nowrap: never crush names into vertical letter stacks.
-  assert.match(html, /min-w-\[40rem\]/)
+  // Fixed widths + truncation keep Cost in the initial mobile viewport.
+  assert.match(html, /table-fixed[^\"]*min-w-\[34rem\]/)
+  assert.match(html, /w-32 max-w-32 overflow-hidden/)
+  assert.match(html, /block max-w-full truncate/)
   assert.match(html, /whitespace-nowrap/)
   assert.doesNotMatch(html, /break-all/)
+  assert.doesNotMatch(html, /Grouped by model family/)
 })
 
 test('ModelTable source column uses tool display names not internal IDs', () => {

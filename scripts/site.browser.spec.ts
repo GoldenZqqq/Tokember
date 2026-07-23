@@ -10,7 +10,10 @@ test('renders a complete, bounded launch experience @site-screenshot', async ({ 
     if (message.type() === 'error') browserErrors.push(`console: ${message.text()}`)
   })
   page.on('pageerror', error => browserErrors.push(`page: ${error.message}`))
-  page.on('requestfailed', request => browserErrors.push(`request: ${request.url()}`))
+  page.on('requestfailed', request => {
+    const isOptionalWebm = request.resourceType() === 'media' && request.url().endsWith('/tokember-launch-film.webm')
+    if (!isOptionalWebm) browserErrors.push(`request: ${request.url()}`)
+  })
 
   await page.goto('/')
   await expect(page.getByRole('heading', { name: 'Tokember', exact: true })).toBeVisible()
@@ -37,11 +40,10 @@ test('renders a complete, bounded launch experience @site-screenshot', async ({ 
     expect(bounds.right, `${bounds.selector} crosses the right viewport edge`).toBeLessThanOrEqual(viewport!.width + 1)
   }
 
-  const imagesLoaded = await page.locator('img').evaluateAll(images => images.every(image => {
+  await expect.poll(() => page.locator('img').evaluateAll(images => images.every(image => {
     const element = image as HTMLImageElement
     return element.complete && element.naturalWidth > 0
-  }))
-  expect(imagesLoaded).toBe(true)
+  }))).toBe(true)
   const film = page.locator('.film-player')
   await expect(film).toBeVisible()
   await expect.poll(() => film.evaluate(video => (video as HTMLVideoElement).readyState)).toBeGreaterThanOrEqual(1)
@@ -105,4 +107,37 @@ test('renders a nonblank furnace and honors reduced motion', async ({ page }) =>
     return Number.parseFloat(getComputedStyle(element).animationDuration)
   })
   expect(duration).toBeLessThanOrEqual(0.000001)
+})
+
+test('furnace core reveals on hover, focus, and tap', async ({ page }, testInfo) => {
+  await page.goto('/')
+  const stage = page.locator('#furnace-stage')
+  await expect(stage).toHaveAttribute('data-core-state', 'compact')
+  await expect(stage).toHaveClass(/is-live/)
+
+  if (testInfo.project.name === 'mobile-320') {
+    const stageOwnsItsCenter = await stage.evaluate(element => {
+      const bounds = element.getBoundingClientRect()
+      const target = document.elementFromPoint(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2)
+      return target === element || element.contains(target)
+    })
+    expect(stageOwnsItsCenter).toBe(true)
+    await stage.dispatchEvent('pointerenter', { pointerType: 'touch' })
+    await expect(stage).toHaveAttribute('data-core-state', 'compact')
+  } else {
+    await stage.hover()
+    await expect(stage).toHaveAttribute('data-core-state', 'revealed')
+    await page.mouse.move(1, 1)
+    await expect(stage).toHaveAttribute('data-core-state', 'compact')
+  }
+
+  await stage.focus()
+  await expect(stage).toHaveAttribute('data-core-state', 'revealed')
+  await page.locator('.brand').focus()
+  await expect(stage).toHaveAttribute('data-core-state', 'compact')
+
+  await stage.dispatchEvent('click', { detail: 1 })
+  await expect(stage).toHaveAttribute('data-core-state', 'revealed')
+  await stage.dispatchEvent('click', { detail: 1 })
+  await expect(stage).toHaveAttribute('data-core-state', 'compact')
 })

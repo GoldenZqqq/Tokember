@@ -5,6 +5,36 @@
 }
 
 @layer base {
+  /* Keep every scroll surface quiet and discoverable across browsers. */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(82 82 91 / 0.9) rgb(24 24 27 / 0.72);
+  }
+
+  *::-webkit-scrollbar {
+    width: 7px;
+    height: 7px;
+  }
+
+  *::-webkit-scrollbar-track {
+    border-radius: 999px;
+    background: rgb(24 24 27 / 0.72);
+  }
+
+  *::-webkit-scrollbar-thumb {
+    border: 1px solid rgb(24 24 27 / 0.9);
+    border-radius: 999px;
+    background: rgb(82 82 91 / 0.9);
+  }
+
+  *::-webkit-scrollbar-thumb:hover {
+    background: var(--color-orange-500);
+  }
+
+  *::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+
   body {
     background-color: var(--color-zinc-950);
     color: var(--color-zinc-100);
@@ -13,6 +43,13 @@
     min-height: 100dvh;
     overscroll-behavior-y: none;
     -webkit-tap-highlight-color: transparent;
+  }
+
+  @media (max-width: 640px) {
+    *::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
   }
 }
 

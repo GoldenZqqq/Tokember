@@ -9,7 +9,7 @@ export default defineConfig({
   timeout: 30_000,
   expect: { timeout: 10_000 },
   fullyParallel: false,
-  workers: 4,
+  workers: 2,
   outputDir: '../test-results/site',
   reporter: process.env.CI ? 'line' : 'list',
   use: {

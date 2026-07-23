@@ -9,10 +9,6 @@ function formatNumber(n: number): string {
 }
 
 function formatApprox(n: number, locale: string): string {
-  if (locale.startsWith('zh')) {
-    if (n >= 100_000_000) return `${(n / 100_000_000).toFixed(2)} 亿`
-    if (n >= 10_000) return `${(n / 10_000).toFixed(2)} 万`
-  }
   return n.toLocaleString(locale.startsWith('zh') ? 'zh-CN' : 'en-US', {
     notation: 'compact',
     maximumFractionDigits: 2,

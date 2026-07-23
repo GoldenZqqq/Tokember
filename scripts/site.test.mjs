@@ -57,15 +57,28 @@ test('launch site uses repository-subpath-safe local references with real assets
 })
 
 test('launch site keeps motion optional and content usable without canvas or autoplay', async () => {
-  const [html, css, script] = await Promise.all([
+  const [html, css, script, furnace] = await Promise.all([
     read('site/index.html'),
     read('site/styles.css'),
     read('site/main.js'),
+    read('site/furnace-core.js'),
   ])
 
   assert.match(css, /@media \(prefers-reduced-motion: reduce\)/)
   assert.match(css, /\.furnace-canvas\s*\{\s*display:\s*none;/)
   assert.match(script, /matchMedia\('\(prefers-reduced-motion: reduce\)'\)/)
+  assert.match(furnace, /prefers-reduced-motion/)
+  assert.match(furnace, /tokember-core\.glb/)
+  assert.match(furnace, /wrapMotionParts/)
+  assert.match(furnace, /createEmberField/)
+  assert.match(furnace, /pointerenter/)
+  assert.match(furnace, /pointerType === 'touch'/)
+  assert.match(furnace, /dataset\.coreState/)
+  assert.match(html, /furnace-core\.js/)
+  assert.match(html, /tokember-core\.glb/)
+  assert.match(html, /furnace-fallback/)
+  assert.match(html, /data-core-state="compact"/)
+  assert.match(html, /tabindex="0" role="img"/)
   assert.match(html, /<canvas[^>]+aria-hidden="true"/)
   assert.doesNotMatch(html, /<video[^>]+autoplay/)
   assert.doesNotMatch(html, /(?:hidden|aria-hidden="true")[^>]*>\s*(?:<[^>]+>\s*)*(?:Tokember|Install)/)

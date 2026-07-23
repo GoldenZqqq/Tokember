@@ -93,3 +93,13 @@ test('LanguageSwitch renders EN and 中文', () => {
   assert.match(html, /EN/)
   assert.match(html, /中文/)
 })
+
+test('LanguageSwitch keeps responsive visibility outside the control display class', () => {
+  const html = renderToStaticMarkup(
+    createElement(LocaleProvider, null,
+      createElement(LanguageSwitch, { className: 'hidden md:inline-flex' })),
+  )
+  assert.match(html, /class="hidden md:inline-flex"/)
+  assert.match(html, /class="inline-flex overflow-hidden rounded-lg border border-zinc-800"/)
+  assert.doesNotMatch(html, /class="inline-flex overflow-hidden[^\"]*hidden/)
+})
