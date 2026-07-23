@@ -1,10 +1,14 @@
 import * as THREE from 'three'
 
+const FLAME_ATLAS_URL = new URL('./assets/fire-flipbook-5x5.png', import.meta.url).href
+const FLAME_GRID = 5
+const FLAME_FRAMES = 25
+
 const FULL_QUALITY = Object.freeze({
-  name: 'full', emberCount: 56, flamePlanes: 3, maxPixelRatio: 1.75,
+  name: 'full', emberCount: 56, flameLayers: 3, flameFps: 18, maxPixelRatio: 1.75,
 })
 const LITE_QUALITY = Object.freeze({
-  name: 'lite', emberCount: 30, flamePlanes: 2, maxPixelRatio: 1.25,
+  name: 'lite', emberCount: 30, flameLayers: 2, flameFps: 12, maxPixelRatio: 1.25,
 })
 
 export function resolveCoreQuality() {
@@ -14,7 +18,7 @@ export function resolveCoreQuality() {
   return constrained ? LITE_QUALITY : FULL_QUALITY
 }
 
-const vertexShader = `
+const ribbonVertexShader = `
   uniform float uTime;
   uniform float uSeed;
   uniform float uMotion;
@@ -24,16 +28,15 @@ const vertexShader = `
     vUv = uv;
     vec3 point = position;
     float lift = smoothstep(0.05, 1.0, uv.y);
-    float primary = sin(uTime * 2.5 + uv.y * 5.8 + uSeed) * 0.12;
-    float secondary = sin(uTime * 4.1 - uv.y * 9.0 + uSeed * 1.7) * 0.05;
-    point.x += (primary + secondary) * lift * uMotion;
-    point.z += cos(uTime * 2.0 + uv.y * 7.0 + uSeed) * 0.035 * lift * uMotion;
-    point.y *= 1.0 + sin(uTime * 3.3 + uSeed) * 0.035 * uMotion;
+    float sway = sin(uTime * 2.1 + uv.y * 5.2 + uSeed) * 0.06;
+    float lick = sin(uTime * 4.2 - uv.y * 9.0 + uSeed * 1.7) * 0.025;
+    point.x += (sway + lick) * lift * uMotion;
+    point.z += cos(uTime * 2.5 + uv.y * 7.0 + uSeed) * 0.022 * lift * uMotion;
     gl_Position = projectionMatrix * modelViewMatrix * vec4(point, 1.0);
   }
 `
 
-const fragmentShader = `
+const ribbonFragmentShader = `
   uniform float uTime;
   uniform float uSeed;
   uniform float uMotion;
@@ -55,45 +58,47 @@ const fragmentShader = `
       mix(hash(cell + vec2(0.0, 1.0)), hash(cell + 1.0), local.x), local.y);
   }
 
-  float flameNoise(vec2 point) {
-    float first = noise(point);
-    float second = noise(point * 2.15 + 7.3) * 0.5;
-    float third = noise(point * 4.1 + 13.7) * 0.25;
-    return (first + second + third) / 1.75;
-  }
-
   void main() {
     float time = uTime * uMotion;
-    float y = vUv.y;
-    float x = (vUv.x - 0.5) * 2.0;
-    float turbulence = flameNoise(vec2(vUv.x * 2.7 + uSeed, y * 5.4 - time * 1.7));
-    float drift = (turbulence - 0.5) * 0.34;
-
-    float center = drift * 0.48 + sin(time * 2.4 + uSeed) * 0.13 * y;
-    float centerWidth = mix(0.70, 0.035, pow(y, 0.78));
-    float central = 1.0 - smoothstep(centerWidth, centerWidth + 0.095, abs(x - center));
-    float centralTip = 1.0 - smoothstep(0.78 + turbulence * 0.14, 1.02, y);
-
-    float leftCenter = -0.40 + drift * 0.35 + sin(time * 2.8 + uSeed * 1.4) * 0.14 + y * 0.12;
-    float leftWidth = mix(0.34, 0.018, pow(y, 0.76));
-    float left = 1.0 - smoothstep(leftWidth, leftWidth + 0.075, abs(x - leftCenter));
-    left *= 1.0 - smoothstep(0.58 + turbulence * 0.16, 0.98, y);
-
-    float rightCenter = 0.33 + drift * 0.28 + sin(time * 2.1 + uSeed * 2.1) * 0.11 - y * 0.09;
-    float rightWidth = mix(0.29, 0.014, pow(y, 0.82));
-    float right = 1.0 - smoothstep(rightWidth, rightWidth + 0.07, abs(x - rightCenter));
-    right *= 1.0 - smoothstep(0.66 + turbulence * 0.12, 0.99, y);
-
-    float body = max(central * centralTip, max(left, right));
-    float baseRuffle = 0.83 + noise(vec2(x * 3.5 + uSeed, time * 0.35)) * 0.27;
-    float baseHeight = 0.006 + pow(min(abs(x), 1.0), 1.7) * 0.04;
-    baseHeight += (noise(vec2(x * 4.2 + uSeed, time * 0.42)) - 0.5) * 0.018;
-    float base = smoothstep(baseHeight, baseHeight + 0.022, y);
-    float alpha = body * base * baseRuffle * (0.8 + turbulence * 0.34) * uOpacity;
-    if (alpha < 0.015) discard;
-    float core = central * (1.0 - smoothstep(0.18, 0.84, y));
+    float turbulence = noise(vec2(vUv.x * 4.2 + uSeed, vUv.y * 5.8 - time * 1.45));
+    float edge = smoothstep(0.0, 0.22, vUv.x) * smoothstep(1.0, 0.78, vUv.x);
+    float base = smoothstep(0.02, 0.08, vUv.y);
+    float alpha = edge * base * (0.78 + turbulence * 0.36) * uOpacity;
+    if (alpha < 0.012) discard;
+    float core = (1.0 - smoothstep(0.1, 0.78, vUv.y)) * (1.0 - abs(vUv.x - 0.5) * 1.4);
     vec3 color = mix(uEdgeColor, uCoreColor, clamp(core + uHeat * 0.18, 0.0, 1.0));
-    color *= 0.88 + turbulence * 0.5 + uHeat * 0.2;
+    color *= 0.9 + turbulence * 0.45 + uHeat * 0.16;
+    gl_FragColor = vec4(color, alpha);
+  }
+`
+
+const atlasVertexShader = `
+  varying vec2 vUv;
+  void main() {
+    vUv = uv;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  }
+`
+
+const atlasFragmentShader = `
+  uniform sampler2D uMap;
+  uniform float uFrame;
+  uniform float uGrid;
+  uniform float uOpacity;
+  uniform float uHeat;
+  varying vec2 vUv;
+
+  void main() {
+    float frame = floor(uFrame + 0.5);
+    float column = mod(frame, uGrid);
+    float row = floor(frame / uGrid);
+    vec2 atlasUv = vec2((vUv.x + column) / uGrid,
+      (vUv.y + (uGrid - 1.0 - row)) / uGrid);
+    vec4 texel = texture2D(uMap, atlasUv);
+    float luminance = max(max(texel.r, texel.g), texel.b);
+    float alpha = texel.a * smoothstep(0.01, 0.08, luminance) * uOpacity;
+    if (alpha < 0.012) discard;
+    vec3 color = texel.rgb * (0.82 + uHeat * 0.22);
     gl_FragColor = vec4(color, alpha);
   }
 `
@@ -102,13 +107,53 @@ function createFlameMaterial(seed, inner = false) {
   return new THREE.ShaderMaterial({
     uniforms: {
       uTime: { value: 0 }, uSeed: { value: seed }, uMotion: { value: 1 },
-      uHeat: { value: 0 }, uOpacity: { value: inner ? 0.58 : 0.42 },
+      uHeat: { value: 0 }, uOpacity: { value: inner ? 0.64 : 0.46 },
       uCoreColor: { value: new THREE.Color(inner ? 0xfff4b0 : 0xffb21a) },
       uEdgeColor: { value: new THREE.Color(inner ? 0xff8a00 : 0xe93608) },
     },
-    vertexShader, fragmentShader, transparent: true, side: THREE.DoubleSide,
-    depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false,
+    vertexShader: ribbonVertexShader,
+    fragmentShader: ribbonFragmentShader,
+    transparent: true,
+    side: THREE.DoubleSide,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending,
+    toneMapped: false,
   })
+}
+
+function createRibbonGeometry(segments = 18, seed = 0) {
+  const positions = new Float32Array((segments + 1) * 2 * 3)
+  const uvs = new Float32Array((segments + 1) * 2 * 2)
+  const indices = []
+  for (let index = 0; index <= segments; index += 1) {
+    const t = index / segments
+    const center = Math.sin(t * 3.4 + seed) * 0.07 * t
+    const width = 0.28 * Math.pow(1 - t, 0.64) + 0.015
+    const y = t
+    const offset = index * 6
+    positions[offset] = center - width
+    positions[offset + 1] = y
+    positions[offset + 2] = 0
+    positions[offset + 3] = center + width
+    positions[offset + 4] = y
+    positions[offset + 5] = 0
+    const uvOffset = index * 4
+    uvs[uvOffset] = 0
+    uvs[uvOffset + 1] = t
+    uvs[uvOffset + 2] = 1
+    uvs[uvOffset + 3] = t
+    if (index < segments) {
+      const start = index * 2
+      indices.push(start, start + 1, start + 2, start + 1, start + 3, start + 2)
+    }
+  }
+  const geometry = new THREE.BufferGeometry()
+  geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3))
+  geometry.setAttribute('uv', new THREE.BufferAttribute(uvs, 2))
+  geometry.setIndex(indices)
+  geometry.computeVertexNormals()
+  geometry.translate(0, -0.5, 0)
+  return geometry
 }
 
 function flameAnchor(pivot, tip) {
@@ -125,66 +170,124 @@ function flameAnchor(pivot, tip) {
   }
 }
 
-function addFlamePlanes(group, geometry, anchor, quality, materials) {
-  for (let index = 0; index < quality.flamePlanes; index += 1) {
-    const angle = index * Math.PI / quality.flamePlanes
-    const outer = new THREE.Mesh(geometry, createFlameMaterial(1.7 + index * 2.3))
-    outer.rotation.y = angle
-    outer.rotation.z = index === 0 ? 0.02 : index % 2 ? -0.08 : 0.11
-    outer.position.x = index === 0 ? 0 : (index % 2 ? -0.08 : 0.08) * anchor.width
-    outer.scale.set(anchor.width * 1.08, anchor.height, 1)
-    group.add(outer)
-    materials.push(outer.material)
-    const inner = new THREE.Mesh(geometry, createFlameMaterial(5.1 + index * 1.9, true))
-    inner.rotation.y = angle + 0.11
-    inner.rotation.z = index % 2 ? 0.06 : -0.04
-    inner.position.x = (index % 2 ? -0.045 : 0.045) * anchor.width
-    inner.position.y = anchor.height * 0.02
-    inner.scale.set(anchor.width * 0.62, anchor.height * 0.72, 1)
-    group.add(inner)
-    materials.push(inner.material)
-    if (quality.name === 'full') {
-      const lick = new THREE.Mesh(geometry, createFlameMaterial(8.4 + index * 1.3))
-      lick.position.set((index % 2 ? -0.18 : 0.18) * anchor.width, anchor.height * 0.03, 0)
-      lick.rotation.z = index % 2 ? -0.16 : 0.12
-      lick.scale.set(anchor.width * 0.46, anchor.height * 0.76, 1)
-      group.add(lick)
-      materials.push(lick.material)
-    }
+function createRibbonFallback(group, anchor, quality, materials) {
+  for (let index = 0; index < quality.flameLayers; index += 1) {
+    const geometry = createRibbonGeometry(18, index * 1.73 + 0.4)
+    const material = createFlameMaterial(index * 2.3 + 1.7, index === 1)
+    const mesh = new THREE.Mesh(geometry, material)
+    mesh.position.x = (index - (quality.flameLayers - 1) / 2) * anchor.width * 0.16
+    mesh.position.z = index * 0.018
+    mesh.scale.set(anchor.width * (1.03 - index * 0.12), anchor.height * (1 - index * 0.1), 1)
+    group.add(mesh)
+    materials.push({ material, geometry })
   }
 }
 
-export function createProceduralFlame(pivot, tip, quality) {
-  const anchor = flameAnchor(pivot, tip)
+function createAtlasMaterial(texture, opacity) {
+  return new THREE.ShaderMaterial({
+    uniforms: {
+      uMap: { value: texture }, uFrame: { value: 0 }, uGrid: { value: FLAME_GRID },
+      uOpacity: { value: opacity }, uHeat: { value: 0 },
+    },
+    vertexShader: atlasVertexShader,
+    fragmentShader: atlasFragmentShader,
+    transparent: true,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending,
+    toneMapped: false,
+  })
+}
+
+function createFlameLayers(anchor, quality) {
   const group = new THREE.Group()
-  group.name = 'ProceduralFlame'
+  group.name = 'FlameEffect'
   group.position.copy(anchor.position)
-  const geometry = new THREE.PlaneGeometry(1, 1, 12, 24)
-  geometry.translate(0, 0.5, 0)
-  const materials = []
-  addFlamePlanes(group, geometry, anchor, quality, materials)
+  const fallbackGroup = new THREE.Group()
+  fallbackGroup.name = 'ProceduralFlame'
+  const fallbackMaterials = []
+  createRibbonFallback(fallbackGroup, anchor, quality, fallbackMaterials)
+  group.add(fallbackGroup)
+
+  const atlasGroup = new THREE.Group()
+  atlasGroup.name = 'FireFlipbook'
+  atlasGroup.visible = false
+  const atlasMaterial = createAtlasMaterial(null, quality.name === 'full' ? 0.82 : 0.74)
+  const atlasMesh = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), atlasMaterial)
+  atlasMesh.scale.set(anchor.width * 1.16, anchor.height * 1.22, 1)
+  atlasMesh.position.y = anchor.height * 0.03
+  atlasGroup.add(atlasMesh)
+  group.add(atlasGroup)
   const light = new THREE.PointLight(0xff6a00, 10, 5, 2)
   light.position.y = anchor.height * 0.42
   group.add(light)
-  pivot.add(group)
+  return { group, fallbackGroup, fallbackMaterials, atlasGroup, atlasMaterial, atlasMesh, light }
+}
+
+function loadFireAtlas(state, onModeChange) {
+  const loader = new THREE.TextureLoader()
+  loader.load(FLAME_ATLAS_URL, texture => {
+    if (state.disposed) {
+      texture.dispose()
+      return
+    }
+    texture.colorSpace = THREE.SRGBColorSpace
+    texture.minFilter = THREE.LinearFilter
+    texture.magFilter = THREE.LinearFilter
+    texture.generateMipmaps = false
+    state.atlasMaterial.uniforms.uMap.value = texture
+    state.atlasGroup.visible = true
+    state.fallbackGroup.visible = false
+    state.atlasReady = true
+    onModeChange?.('flipbook')
+  }, undefined, () => {
+    if (!state.disposed) onModeChange?.('procedural')
+  })
+}
+
+function updateFlame(state, quality, time, reveal, pulse, frozen) {
+  const motion = frozen ? 0 : 1
+  const heat = 0.35 + reveal * 0.3 + pulse * 0.35
+  state.fallbackMaterials.forEach(({ material }) => {
+    material.uniforms.uTime.value = frozen ? 0.85 : time
+    material.uniforms.uMotion.value = motion
+    material.uniforms.uHeat.value = heat
+  })
+  if (state.atlasReady) {
+    const frame = Math.floor((frozen ? 0 : time) * quality.flameFps) % FLAME_FRAMES
+    state.atlasMaterial.uniforms.uFrame.value = frame
+    state.atlasMaterial.uniforms.uHeat.value = heat
+  }
+  const breath = frozen ? 1 : 1 + Math.sin(time * 3.2) * 0.035
+  state.group.scale.set(breath, breath * (1 + reveal * 0.08), breath)
+  state.light.intensity = 8 + heat * 8 + (frozen ? 0 : Math.sin(time * 7.1) * 1.4)
+}
+
+function disposeFlame(state, pivot) {
+  state.disposed = true
+  pivot.remove(state.group)
+  state.fallbackMaterials.forEach(({ material, geometry }) => {
+    geometry.dispose()
+    material.dispose()
+  })
+  state.atlasMesh.geometry.dispose()
+  const texture = state.atlasMaterial.uniforms.uMap.value
+  if (texture) texture.dispose()
+  state.atlasMaterial.dispose()
+}
+
+export function createProceduralFlame(pivot, tip, quality, onModeChange) {
+  const state = {
+    ...createFlameLayers(flameAnchor(pivot, tip), quality),
+    atlasReady: false,
+    disposed: false,
+  }
+  pivot.add(state.group)
   tip.visible = false
+  loadFireAtlas(state, onModeChange)
   return {
-    update(time, reveal, pulse, frozen) {
-      const motion = frozen ? 0 : 1
-      const heat = 0.35 + reveal * 0.3 + pulse * 0.35
-      materials.forEach(material => {
-        material.uniforms.uTime.value = frozen ? 0.85 : time
-        material.uniforms.uMotion.value = motion
-        material.uniforms.uHeat.value = heat
-      })
-      const breath = frozen ? 1 : 1 + Math.sin(time * 3.2) * 0.035
-      group.scale.set(breath, breath * (1 + reveal * 0.08), breath)
-      light.intensity = 8 + heat * 8 + (frozen ? 0 : Math.sin(time * 7.1) * 1.4)
+    update: (time, reveal, pulse, frozen) => {
+      updateFlame(state, quality, time, reveal, pulse, frozen)
     },
-    dispose() {
-      pivot.remove(group)
-      geometry.dispose()
-      materials.forEach(material => material.dispose())
-    },
+    dispose: () => disposeFlame(state, pivot),
   }
 }
