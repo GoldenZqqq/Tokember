@@ -1,10 +1,11 @@
 /**
  * Interactive Tokember furnace-core mark (three.js + glTF).
- * Uses a canvas-only 3D Hero with a procedural flame enhancement.
+ * Uses a canvas-only 3D Hero with morphing armor and a local fire flipbook.
  */
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import { createProceduralFlame, resolveCoreQuality } from './furnace-flame.js'
+import { createCompactPose, createShellMesh } from './furnace-shells.js'
 
 const MODEL_URL = new URL('./assets/tokember-core.glb', import.meta.url).href
 const IDLE_SPIN = 0.28
@@ -106,30 +107,13 @@ function fitCameraToObject(camera, object, offset = 1.35) {
   camera.updateProjectionMatrix()
 }
 
-function createCompactPose(name, center, index, expanded) {
-  const isRing = name.startsWith('RingSeg_')
-  const scale = isRing ? 0.9 : name === 'EmberRing' ? 0.74 : name === 'InnerGlow' ? 1.08 : 1
-  const direction = center.lengthSq() > 0.001
-    ? center.clone().normalize()
-    : new THREE.Vector3(Math.cos(index * 2.1), 0, Math.sin(index * 2.1)).normalize()
-  const targetCenter = direction.multiplyScalar(isRing ? 0.56 : 0.03)
-  const quaternion = isRing
-    ? expanded.quaternion.clone()
-    : new THREE.Quaternion().setFromEuler(new THREE.Euler(0, 0, index * 0.15))
-  const transformedCenter = center.clone().multiplyScalar(scale).applyQuaternion(quaternion)
-  return {
-    position: targetCenter.sub(transformedCenter),
-    quaternion,
-    scale: new THREE.Vector3(scale, scale, scale),
-  }
-}
-
 function wrapMotionParts(model) {
   const nodes = []
   model.traverse(node => {
     if (node.isMesh && CORE_PARTS.has(node.name)) nodes.push(node)
   })
   model.updateWorldMatrix(true, true)
+  let shellIndex = 0
   return nodes.map((node, index) => {
     const parent = node.parent
     if (!parent) return null
@@ -152,17 +136,27 @@ function wrapMotionParts(model) {
       quaternion: motion.quaternion.clone(),
       scale: motion.scale.clone(),
     }
+    const currentShellIndex = node.name.startsWith('RingSeg_') ? shellIndex++ : -1
+    const shell = currentShellIndex >= 0
+      ? createShellMesh(node, center, currentShellIndex)
+      : null
+    if (shell) {
+      node.visible = false
+      motion.add(shell)
+    }
     return {
       name: node.name,
       motion,
+      shell,
       center,
       expanded,
-      compact: createCompactPose(node.name, center, index, expanded),
+      compact: createCompactPose(node.name, center, currentShellIndex >= 0 ? currentShellIndex : index, expanded),
     }
   }).filter(Boolean)
 }
 
 function applyPiecePose(piece, reveal) {
+  if (piece.shell) piece.shell.morphTargetInfluences[0] = 1 - reveal
   piece.motion.position.copy(piece.compact.position).lerp(piece.expanded.position, reveal)
   piece.motion.quaternion.copy(piece.compact.quaternion).slerp(piece.expanded.quaternion, reveal)
   piece.motion.scale.copy(piece.compact.scale).lerp(piece.expanded.scale, reveal)
@@ -362,6 +356,7 @@ function createFurnaceCore(stage, canvas, status) {
     if (next !== state.targetReveal && next > state.targetReveal && pulseOnReveal) pulse = 1
     state.targetReveal = next
     stage.dataset.coreState = next ? 'revealed' : 'compact'
+    stage.dataset.shellPose = next ? 'separated' : 'enclosing'
     renderStillFrame()
   }
 
@@ -512,7 +507,12 @@ function createFurnaceCore(stage, canvas, status) {
       model.rotateX(Math.PI / 2)
       pivot.add(model)
       const flameTip = model.getObjectByName('FlameTip')
-      if (flameTip?.isMesh) flame = createProceduralFlame(pivot, flameTip, quality)
+      if (flameTip?.isMesh) {
+        flame = createProceduralFlame(pivot, flameTip, quality, mode => {
+          stage.dataset.flameState = mode
+          renderStillFrame()
+        })
+      }
       pieces = wrapMotionParts(model)
       fitCameraToObject(camera, pivot, 1.28)
       captureEmissive(model)

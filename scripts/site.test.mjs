@@ -57,11 +57,14 @@ test('launch site uses repository-subpath-safe local references with real assets
 })
 
 test('launch site keeps motion optional and the canvas-only Hero accessible', async () => {
-  const [html, css, script, furnace] = await Promise.all([
+  const [html, css, script, furnace, flame, shells, attribution] = await Promise.all([
     read('site/index.html'),
     read('site/styles.css'),
     read('site/main.js'),
     read('site/furnace-core.js'),
+    read('site/furnace-flame.js'),
+    read('site/furnace-shells.js'),
+    read('site/assets/ATTRIBUTION.md'),
   ])
 
   assert.match(css, /@media \(prefers-reduced-motion: reduce\)/)
@@ -70,9 +73,16 @@ test('launch site keeps motion optional and the canvas-only Hero accessible', as
   assert.match(furnace, /prefers-reduced-motion/)
   assert.match(furnace, /tokember-core\.glb/)
   assert.match(furnace, /wrapMotionParts/)
+  assert.match(furnace, /createShellMesh/)
+  assert.match(furnace, /furnace-shells\.js/)
+  assert.match(shells, /morphAttributes\.position/)
   assert.match(furnace, /createEmberField/)
   assert.match(furnace, /createProceduralFlame/)
   assert.match(furnace, /resolveCoreQuality/)
+  assert.match(flame, /fire-flipbook-5x5\.png/)
+  assert.match(attribution, /CC0 1\.0 Universal/)
+  assert.doesNotMatch(attribution, /[\u3400-\u9fff]/u)
+  await access(resolve(SITE, 'assets/fire-flipbook-5x5.png'))
   assert.match(furnace, /pointerenter/)
   assert.match(furnace, /pointerType === 'touch'/)
   assert.match(furnace, /dataset\.coreState/)

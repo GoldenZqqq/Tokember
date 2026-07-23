@@ -103,7 +103,7 @@ test('renders a nonblank furnace and honors reduced motion', async ({ page }) =>
 
   await page.emulateMedia({ reducedMotion: 'reduce' })
   await expect(page.locator('#furnace-canvas')).toHaveCSS('display', 'none')
-  await expect(page.locator('#furnace-stage')).toHaveAttribute('data-flame-state', 'procedural')
+  await expect(page.locator('#furnace-stage')).toHaveAttribute('data-flame-state', /flipbook|procedural/)
   const duration = await page.locator('.core-orbit-a').evaluate(element => {
     return Number.parseFloat(getComputedStyle(element).animationDuration)
   })
@@ -132,27 +132,33 @@ test('furnace core reveals on hover, focus, and tap', async ({ page }, testInfo)
   } else {
     await stage.hover()
     await expect(stage).toHaveAttribute('data-core-state', 'revealed')
+    await expect(stage).toHaveAttribute('data-shell-pose', 'separated')
     await stage.screenshot({ path: testInfo.outputPath('furnace-revealed.png') })
     await page.mouse.move(1, 1)
     await expect(stage).toHaveAttribute('data-core-state', 'compact')
+    await expect(stage).toHaveAttribute('data-shell-pose', 'enclosing')
   }
 
   await stage.focus()
   await expect(stage).toHaveAttribute('data-core-state', 'revealed')
+  await expect(stage).toHaveAttribute('data-shell-pose', 'separated')
   await page.locator('.brand').focus()
   await expect(stage).toHaveAttribute('data-core-state', 'compact')
+  await expect(stage).toHaveAttribute('data-shell-pose', 'enclosing')
 
   await stage.dispatchEvent('click', { detail: 1 })
   await expect(stage).toHaveAttribute('data-core-state', 'revealed')
+  await expect(stage).toHaveAttribute('data-shell-pose', 'separated')
   await stage.dispatchEvent('click', { detail: 1 })
   await expect(stage).toHaveAttribute('data-core-state', 'compact')
+  await expect(stage).toHaveAttribute('data-shell-pose', 'enclosing')
 })
 
-test('procedural flame changes rendered pixels while motion is enabled', async ({ page }) => {
+test('fire treatment changes rendered pixels while motion is enabled', async ({ page }) => {
   await page.goto('/')
   const stage = page.locator('#furnace-stage')
   await expect(stage).toHaveClass(/is-live/)
-  await expect(stage).toHaveAttribute('data-flame-state', 'procedural')
+  await expect(stage).toHaveAttribute('data-flame-state', /flipbook|procedural/)
   const first = await stage.screenshot()
   await page.waitForTimeout(240)
   const second = await stage.screenshot()
