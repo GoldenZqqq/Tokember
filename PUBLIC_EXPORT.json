@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
-  "source_commit": "b935ee164cf505af21a0ef58a32f86e7ddf23c3d",
-  "file_count": 349,
+  "source_commit": "7445ba320f10cd592040532c54809043bbbd9dee",
+  "file_count": 352,
   "files": [
     {
       "path": ".dockerignore",
@@ -460,6 +460,10 @@
       "sha256": "bb32f873e1d32b1fcbdf44091976300071ee1f3fce2205ea9387f3888277023b"
     },
     {
+      "path": "docs/images/tokember-core.blend",
+      "sha256": "53762b56488ec487462a3aa5b8076412bec1df60eb4c4039673369a5e76a135a"
+    },
+    {
       "path": "docs/privacy.md",
       "sha256": "b5c2f1e04f6d01725808f7c86e0314cacf543ae71c99be70f134ec1190ec83ff"
     },
@@ -469,7 +473,7 @@
     },
     {
       "path": "e2e/critical.spec.ts",
-      "sha256": "0b59655f402d9e3e9f04800ead78490c3b65efc8b1268136bac0ec3f313e5d2a"
+      "sha256": "e69652cc8f19f85428eb3c8e45fb475fd724678098bf54eb15fd10320939393e"
     },
     {
       "path": "e2e/setup/seed.setup.ts",
@@ -573,15 +577,15 @@
     },
     {
       "path": "scripts/site.browser.spec.ts",
-      "sha256": "392a3e2ba26fd2ef9ce08084c64381ab9eb4e0c6a76c24d9c2ea880cac99bd4e"
+      "sha256": "b042c94993c7e8691a4c159cdb0a49038861eadac66252128717e23c7dd1b1be"
     },
     {
       "path": "scripts/site.playwright.config.ts",
-      "sha256": "f03fa3c3689ad2bffc618dcd324790042a83beafb9189ad2579a2d1442e9fba3"
+      "sha256": "a38e77d25f215c6dd331190dbd6777c25c82feff90f0c32c4f06ef73ebdd4f74"
     },
     {
       "path": "scripts/site.test.mjs",
-      "sha256": "f34e63fe21e8685c950203b0047ed6113588bb5d9f9931eb012e3afc7d06886a"
+      "sha256": "3629c33408e6ef91ec56615e81c47e6c3c2b052239553958cce41af81be2fe47"
     },
     {
       "path": "scripts/stage-release.mjs",
@@ -900,6 +904,10 @@
       "sha256": "10b0e6bb43166a50fbe7cde2895bd7f703738a5da843acb5c97c95dc9ea26817"
     },
     {
+      "path": "site/assets/tokember-core.glb",
+      "sha256": "382738f0ba6767c9de8d07d3b117d065134733c7d03ce9dfbf61899e8139d414"
+    },
+    {
       "path": "site/assets/tokember-launch-film-poster.jpg",
       "sha256": "4d6bf8288aaf2255528cd23e36f1dba4329ca7f37878973865474c5b425ac062"
     },
@@ -916,8 +924,12 @@
       "sha256": "a255bb76a4f9ed27ec02f6e02213b00b35297a6c6cc7564c9a156eece2ab4a7e"
     },
     {
+      "path": "site/furnace-core.js",
+      "sha256": "860dab9e482d8b399f403231ca8c589b430c7f601a37e3ac87859b248429f488"
+    },
+    {
       "path": "site/index.html",
-      "sha256": "9a822e919454b7a34ecf4b6a9b839015ccf067760bf26e14917128314b991be1"
+      "sha256": "cfb2b0d50c9b4cd919983cf45e9be5a037a5b2e085bc1f221318e9459b577b0e"
     },
     {
       "path": "site/main.js",
@@ -925,7 +937,7 @@
     },
     {
       "path": "site/styles.css",
-      "sha256": "b4408679c9e7f936db3237b3358b77ef009f8d36d1da5ed1ccd56ac9c1ea4e90"
+      "sha256": "c57e894bdf1070e6257cabc08319a7d8d1a38d4ae0aed494b92b648e93b01a88"
     },
     {
       "path": "SUPPORT.md",
@@ -1121,11 +1133,11 @@
     },
     {
       "path": "web/src/components/ModelTable.tsx",
-      "sha256": "baf5ee1907edd5f23f95cc81a6c9ca71097b3236d73e1fbcede58fce3bd03685"
+      "sha256": "79a69000485129b36ce8a98a48e649b82aaf87c149e4652ed067ea377382a154"
     },
     {
       "path": "web/src/components/Overview.tsx",
-      "sha256": "d9ee98f2a287a358601fffc7c8c4449c2278c0822683e21aabf4ea34d27ab991"
+      "sha256": "c016f29473edf3b61290d0f9879c895cda4b863999cb050d628741f26a57f360"
     },
     {
       "path": "web/src/components/ProviderBreakdown.tsx",
@@ -1305,7 +1317,7 @@
     },
     {
       "path": "web/src/i18n/i18n.test.ts",
-      "sha256": "58ff902510e381056e9ce291b48473da53ed3f91db9e958590c0ebac97931dc7"
+      "sha256": "34ba56817298086628ca08db8845d8e39170ad182e8c19d3dff9771cfd71c94a"
     },
     {
       "path": "web/src/i18n/index.ts",
@@ -1313,7 +1325,7 @@
     },
     {
       "path": "web/src/i18n/LanguageSwitch.tsx",
-      "sha256": "a7e4ecf25f0fc0a7b26a8e0ffffafb62a67b27286ba016b40325089f3a4721d1"
+      "sha256": "6a53513194dc2b7ec79ba6b5650b697a8e152365d00fa43f78a976fc33a566e8"
     },
     {
       "path": "web/src/i18n/locales.ts",
@@ -1321,7 +1333,7 @@
     },
     {
       "path": "web/src/i18n/messages/en.ts",
-      "sha256": "5d9ae73b0a8a449ba26adfe4df99059cd701ed3114393eb625412cd0bbdcd350"
+      "sha256": "1e3f0bb3915bad2a1614f61f955e02039313027557cfeba796dd2ef817828027"
     },
     {
       "path": "web/src/i18n/messages/index.ts",
@@ -1329,7 +1341,7 @@
     },
     {
       "path": "web/src/i18n/messages/zh.ts",
-      "sha256": "00448eccd72e805591a3c05da9724d2577457321fa61ad5000029762cf9eaebd"
+      "sha256": "d5038d0c43a400a61532d026fb8f3fd07ca3bc1146d17f39675a5e9d34e24669"
     },
     {
       "path": "web/src/i18n/preference.ts",
@@ -1345,7 +1357,7 @@
     },
     {
       "path": "web/src/index.css",
-      "sha256": "70c6042c637f6f05730cce529d45443c302e7b4d6f26f662b602c95412dc175c"
+      "sha256": "aa956ea174ed776d5b6178359a670e039ff0b61aeaabb95b5fb971a45d49cf88"
     },
     {
       "path": "web/src/main.tsx",
@@ -1353,7 +1365,7 @@
     },
     {
       "path": "web/src/model-display.test.ts",
-      "sha256": "1f42a1d1af316f6ea18ec586e8554696b6f76ff3904aaf27373aca83b1884ff9"
+      "sha256": "b7aef54ce1eed2a3f7d5117cd3a459f61b0f3e90faba45ffed51091f7054b8c5"
     },
     {
       "path": "web/src/model-display.ts",

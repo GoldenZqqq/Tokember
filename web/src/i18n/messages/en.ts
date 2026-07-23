@@ -92,7 +92,6 @@ export const en = {
   },
   modelTable: {
     title: 'Model breakdown',
-    subtitle: 'Grouped by model family; free / Build / thinking tiers merged',
     model: 'Model',
     source: 'Source',
     cost: 'Cost',

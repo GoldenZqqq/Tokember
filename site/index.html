@@ -13,7 +13,16 @@
   <title>Tokember - Self-hosted AI usage ledger</title>
   <link rel="icon" href="./assets/tokember-mark.png">
   <link rel="preload" href="./assets/fonts/barlow-condensed-700.ttf" as="font" type="font/ttf" crossorigin>
+  <link rel="preload" href="./assets/tokember-core.glb" as="fetch" crossorigin>
   <link rel="stylesheet" href="./styles.css">
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+    }
+  }
+  </script>
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
@@ -55,17 +64,19 @@
             One precise view of AI usage, cost, models, devices, and collector health.
             Your server. Your SQLite. No SaaS required.
           </p>
+          <div class="furnace-core" aria-label="Tokember product signal. Drag to rotate the 3D mark.">
+            <div class="furnace-stage" id="furnace-stage" tabindex="0" role="img" data-core-state="compact" aria-label="Tokember furnace core. Hover or focus to unfold the mark; tap to pin it open.">
+              <canvas class="furnace-core-canvas" id="furnace-core-canvas" aria-hidden="true"></canvas>
+              <img class="furnace-fallback" src="./assets/tokember-mark.png" alt="Tokember flame mark" width="512" height="512">
+            </div>
+            <div class="core-orbit core-orbit-a" aria-hidden="true"></div>
+            <div class="core-orbit core-orbit-b" aria-hidden="true"></div>
+            <p class="core-readout"><span>Demo ledger online</span><strong>1,540</strong><small>fixture tokens observed</small></p>
+          </div>
           <div class="hero-actions" aria-label="Get started">
             <a class="button button-primary" href="https://github.com/GoldenZqqq/Tokember/releases/tag/v0.1.0">View the release</a>
             <a class="button button-secondary" href="https://github.com/GoldenZqqq/Tokember#5-minute-local-experience">Read the docs</a>
           </div>
-        </div>
-
-        <div class="furnace-core" aria-label="Tokember product signal">
-          <img src="./assets/tokember-mark.png" alt="Tokember flame mark" width="512" height="512">
-          <div class="core-orbit core-orbit-a" aria-hidden="true"></div>
-          <div class="core-orbit core-orbit-b" aria-hidden="true"></div>
-          <p class="core-readout"><span>Demo ledger online</span><strong>1,540</strong><small>fixture tokens observed</small></p>
         </div>
 
         <dl class="telemetry-rail" aria-label="Deterministic product demo telemetry">
@@ -224,5 +235,6 @@
     </footer>
   </div>
   <script src="./main.js" defer></script>
+  <script type="module" src="./furnace-core.js"></script>
 </body>
 </html>

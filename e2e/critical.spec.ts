@@ -17,11 +17,27 @@ async function expectNoHorizontalOverflow(page: import('@playwright/test').Page)
   expect(widths.document).toBeLessThanOrEqual(widths.viewport + 1)
 }
 
+async function expectSingleVisibleLanguageSwitch(page: import('@playwright/test').Page): Promise<void> {
+  await expect(page.locator('[role="group"][aria-label="Language"]:visible')).toHaveCount(1)
+}
+
+async function expectModelCostVisible(page: import('@playwright/test').Page): Promise<void> {
+  const card = page.getByRole('heading', { name: 'Model breakdown' }).locator('xpath=../..')
+  const scroller = card.locator('.overflow-x-auto')
+  const cost = card.getByRole('columnheader', { name: 'Cost' })
+  await expect(cost).toBeVisible()
+  const [scrollBox, costBox] = await Promise.all([scroller.boundingBox(), cost.boundingBox()])
+  if (!scrollBox || !costBox) throw new Error('Model cost column has no measurable layout box')
+  expect(costBox.x + costBox.width).toBeLessThanOrEqual(scrollBox.x + scrollBox.width + 1)
+}
+
 test('viewer reaches the dashboard and keeps the viewport contained', async ({ page }) => {
   await page.goto('/')
   await loginViewer(page)
   await expect(page.getByRole('heading', { name: 'Today usage trend' })).toBeVisible()
   await expect(page.getByRole('combobox', { name: 'Filter devices' })).toContainText('Demo Device')
+  await expectSingleVisibleLanguageSwitch(page)
+  await expectModelCostVisible(page)
   await expectNoHorizontalOverflow(page)
 })
 

@@ -93,7 +93,6 @@ export const zh: EnMessages = {
   },
   modelTable: {
     title: '模型明细',
-    subtitle: '按模型族归并；免费/Build/Thinking 计费档已合并',
     model: '模型',
     source: '来源',
     cost: '花费',
