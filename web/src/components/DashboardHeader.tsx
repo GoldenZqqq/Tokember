@@ -1,7 +1,7 @@
 import type { RangeValue } from './RangeTabs'
 import { DeviceSelector } from './DeviceSelector'
 import { RangeTabs } from './RangeTabs'
-import { LanguageSwitch, useT } from '../i18n'
+import { useT } from '../i18n'
 
 interface Props {
   devices: { id: string; name: string }[]
@@ -33,18 +33,28 @@ export function DashboardHeader(props: Props) {
             <span className="block md:inline">{t('app.taglineRead')}</span>
           </p>
         </div>
+        {/* Mobile / PWA: refresh → device → year → settings */}
         <div className="flex shrink-0 items-center gap-1.5 md:hidden">
-          <LanguageSwitch />
-          <SettingsButton onClick={props.onSettings} className="flex" />
-          <YearButton onClick={props.onYear} className="flex" />
           <RefreshButton onClick={props.onRefresh} refreshing={props.refreshing} className="flex" />
+          <DeviceSelector
+            devices={props.devices}
+            value={props.device}
+            onChange={props.onDeviceChange}
+            variant="icon"
+          />
+          <YearButton onClick={props.onYear} className="flex" />
+          <SettingsButton onClick={props.onSettings} className="flex" />
         </div>
       </div>
 
-      <div className="grid w-full min-w-0 grid-cols-1 items-center gap-2 sm:grid-cols-[minmax(0,1fr)_15rem] md:flex md:w-auto md:gap-3">
-        <DeviceSelector devices={props.devices} value={props.device} onChange={props.onDeviceChange} />
+      <div className="flex w-full min-w-0 flex-col items-stretch gap-2 md:w-auto md:flex-row md:items-center md:gap-3">
+        <DeviceSelector
+          devices={props.devices}
+          value={props.device}
+          onChange={props.onDeviceChange}
+          className="hidden md:block"
+        />
         <RangeTabs value={props.range} onChange={props.onRangeChange} />
-        <LanguageSwitch className="hidden md:inline-flex" />
         <RefreshButton onClick={props.onRefresh} refreshing={props.refreshing} className="hidden md:flex" />
         <YearButton onClick={props.onYear} className="hidden md:flex" />
         <SettingsButton onClick={props.onSettings} className="hidden md:flex" />

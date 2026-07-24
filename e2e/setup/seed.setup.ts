@@ -38,6 +38,18 @@ setup('seed deterministic demo data', async () => {
     architecture: 'x64',
     hostname: 'demo-host',
   })
+  // A second registered device makes the device filter meaningful (the selector
+  // hides itself for single-device installs). It carries no usage records, so
+  // totals, model distribution, and byDevice aggregates stay deterministic.
+  await post('/devices', {
+    id: 'demo-laptop',
+    name: 'Demo Laptop',
+    native_sources: ['claude', 'codex'],
+    protocol_version: 1,
+    platform: 'linux',
+    architecture: 'x64',
+    hostname: 'demo-laptop',
+  })
   await post('/ingest', { device_id: DEVICE_ID, records: demoRecords() })
   await post('/collector-runs', {
     schema_version: 1,

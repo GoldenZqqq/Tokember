@@ -31,7 +31,7 @@ function baseStats(): Stats {
 
 test('provider display names use the tool names shown to users', () => {
   assert.equal(providerDisplayName('codex'), 'Codex')
-  assert.equal(providerDisplayName('claude'), 'ClaudeCode')
+  assert.equal(providerDisplayName('claude'), 'Claude Code')
   assert.equal(providerDisplayName('grok'), 'Grok Build')
   assert.equal(providerDisplayName('grok-build'), 'Grok Build')
   assert.equal(providerDisplayName('antigravity'), 'Antigravity')
@@ -53,7 +53,7 @@ test('provider breakdown renders display names instead of internal IDs', () => {
   })))
 
   assert.match(html, /Codex/)
-  assert.match(html, /ClaudeCode/)
+  assert.match(html, /Claude Code/)
   assert.match(html, /Grok Build/)
   assert.doesNotMatch(html, />codex</)
   assert.doesNotMatch(html, />claude</)
@@ -89,7 +89,7 @@ test('model table and comparison panel keep the same tool display names', () => 
     ],
   })))
   assert.match(modelHtml, /Codex/)
-  assert.match(modelHtml, /ClaudeCode/)
+  assert.match(modelHtml, /Claude Code/)
   assert.doesNotMatch(modelHtml, />codex</)
   assert.doesNotMatch(modelHtml, />claude</)
 
@@ -112,6 +112,6 @@ test('model table and comparison panel keep the same tool display names', () => 
       comparison: { mode: 'previous-period', label: 'Previous period', stats: previous },
     },
   })))
-  assert.match(comparisonHtml, /ClaudeCode/)
+  assert.match(comparisonHtml, /Claude Code/)
   assert.doesNotMatch(comparisonHtml, />claude</)
 })

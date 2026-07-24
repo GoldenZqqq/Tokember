@@ -1,13 +1,21 @@
 /**
  * Interactive Tokember furnace-core mark (three.js + glTF).
- * Uses a canvas-only 3D Hero with morphing armor and a local fire flipbook.
+ * Uses a canvas-only 3D Hero with transform-posed armor and an ember glow field.
  */
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
-import { createProceduralFlame, resolveCoreQuality } from './furnace-flame.js'
-import { createCompactPose, createShellMesh } from './furnace-shells.js'
 
 const MODEL_URL = new URL('./assets/tokember-core.glb', import.meta.url).href
+const FULL_QUALITY = Object.freeze({ name: 'full', emberCount: 56, maxPixelRatio: 1.75 })
+const LITE_QUALITY = Object.freeze({ name: 'lite', emberCount: 30, maxPixelRatio: 1.25 })
+
+function resolveCoreQuality() {
+  const memory = Number(navigator.deviceMemory || 8)
+  const cores = Number(navigator.hardwareConcurrency || 8)
+  const constrained = window.innerWidth <= 640 || memory <= 4 || cores <= 4
+  return constrained ? LITE_QUALITY : FULL_QUALITY
+}
+
 const IDLE_SPIN = 0.28
 const DRAG_SCALE = 0.0055
 const VELOCITY_DAMP = 0.92
@@ -21,7 +29,6 @@ const BRAND_MATERIALS = {
   RingSeg_Gold: { color: 0xfbbf24, emissive: 0xf59e0b, emissiveIntensity: 1.35, metalness: 0.55, roughness: 0.28 },
   RingSeg_Orange: { color: 0xf97316, emissive: 0xea580c, emissiveIntensity: 1.55, metalness: 0.5, roughness: 0.26 },
   RingSeg_Hot: { color: 0xea580c, emissive: 0xc2410c, emissiveIntensity: 1.7, metalness: 0.48, roughness: 0.24 },
-  FlameTip: { color: 0xff7a12, emissive: 0xff6200, emissiveIntensity: 2.6, metalness: 0.08, roughness: 0.32 },
   InnerCore: { color: 0x120c08, emissive: 0x7c2d12, emissiveIntensity: 0.55, metalness: 0.85, roughness: 0.4 },
   InnerGlow: { color: 0xff6b00, emissive: 0xff6b00, emissiveIntensity: 0.9, metalness: 0, roughness: 1, transparent: true, opacity: 0.22 },
   EmberRing: { color: 0xfbbf24, emissive: 0xfbbf24, emissiveIntensity: 2.8, metalness: 0.2, roughness: 0.4 },
@@ -45,7 +52,6 @@ function resolveBrandKey(...candidates) {
     Mat_Gold: 'RingSeg_Gold',
     Mat_Orange: 'RingSeg_Orange',
     Mat_Hot: 'RingSeg_Hot',
-    Mat_Flame: 'FlameTip',
     Mat_Core: 'InnerCore',
     Mat_Glow: 'InnerGlow',
     Mat_Ember: 'EmberRing',
@@ -107,13 +113,30 @@ function fitCameraToObject(camera, object, offset = 1.35) {
   camera.updateProjectionMatrix()
 }
 
+function createCompactPose(name, center, index, expanded) {
+  const isRing = name.startsWith('RingSeg_')
+  const scale = isRing ? 0.9 : name === 'EmberRing' ? 0.74 : name === 'InnerGlow' ? 1.08 : 1
+  const direction = center.lengthSq() > 0.001
+    ? center.clone().normalize()
+    : new THREE.Vector3(Math.cos(index * 2.1), 0, Math.sin(index * 2.1)).normalize()
+  const targetCenter = direction.multiplyScalar(isRing ? 0.56 : 0.03)
+  const quaternion = isRing
+    ? expanded.quaternion.clone()
+    : new THREE.Quaternion().setFromEuler(new THREE.Euler(0, 0, index * 0.15))
+  const transformedCenter = center.clone().multiplyScalar(scale).applyQuaternion(quaternion)
+  return {
+    position: targetCenter.sub(transformedCenter),
+    quaternion,
+    scale: new THREE.Vector3(scale, scale, scale),
+  }
+}
+
 function wrapMotionParts(model) {
   const nodes = []
   model.traverse(node => {
     if (node.isMesh && CORE_PARTS.has(node.name)) nodes.push(node)
   })
   model.updateWorldMatrix(true, true)
-  let shellIndex = 0
   return nodes.map((node, index) => {
     const parent = node.parent
     if (!parent) return null
@@ -136,27 +159,17 @@ function wrapMotionParts(model) {
       quaternion: motion.quaternion.clone(),
       scale: motion.scale.clone(),
     }
-    const currentShellIndex = node.name.startsWith('RingSeg_') ? shellIndex++ : -1
-    const shell = currentShellIndex >= 0
-      ? createShellMesh(node, center, currentShellIndex)
-      : null
-    if (shell) {
-      node.visible = false
-      motion.add(shell)
-    }
     return {
       name: node.name,
       motion,
-      shell,
       center,
       expanded,
-      compact: createCompactPose(node.name, center, currentShellIndex >= 0 ? currentShellIndex : index, expanded),
+      compact: createCompactPose(node.name, center, index, expanded),
     }
   }).filter(Boolean)
 }
 
 function applyPiecePose(piece, reveal) {
-  if (piece.shell) piece.shell.morphTargetInfluences[0] = 1 - reveal
   piece.motion.position.copy(piece.compact.position).lerp(piece.expanded.position, reveal)
   piece.motion.quaternion.copy(piece.compact.quaternion).slerp(piece.expanded.quaternion, reveal)
   piece.motion.scale.copy(piece.compact.scale).lerp(piece.expanded.scale, reveal)
@@ -265,7 +278,6 @@ function createFurnaceCore(stage, canvas, status) {
   }
   const quality = resolveCoreQuality()
   stage.dataset.coreQuality = quality.name
-  stage.dataset.flameState = 'procedural'
   stage.dataset.shellPose = 'enclosing'
   let renderer
   try {
@@ -294,7 +306,6 @@ function createFurnaceCore(stage, canvas, status) {
   let intersecting = true
   let modelReady = false
   let pieces = []
-  let flame = null
   let baseEmissive = new Map()
   let pulse = 0
   const state = {
@@ -383,7 +394,6 @@ function createFurnaceCore(stage, canvas, status) {
     effects.warmHalo.scale.setScalar(2.7 * haloScale)
     effects.cyanHalo.scale.setScalar(1.35 * haloScale)
     updateEmberField(effects.field, time, delta, state.reveal)
-    flame?.update(time, state.reveal, pulse, reducedMotion.matches)
     pulse = Math.max(0, pulse - delta * 2.4)
     updateEmissive(time)
   }
@@ -507,12 +517,7 @@ function createFurnaceCore(stage, canvas, status) {
       model.rotateX(Math.PI / 2)
       pivot.add(model)
       const flameTip = model.getObjectByName('FlameTip')
-      if (flameTip?.isMesh) {
-        flame = createProceduralFlame(pivot, flameTip, quality, mode => {
-          stage.dataset.flameState = mode
-          renderStillFrame()
-        })
-      }
+      if (flameTip?.isMesh) flameTip.visible = false
       pieces = wrapMotionParts(model)
       fitCameraToObject(camera, pivot, 1.28)
       captureEmissive(model)
@@ -563,7 +568,6 @@ function createFurnaceCore(stage, canvas, status) {
     stage.removeEventListener('keydown', onKeyDown)
     reducedMotion.removeEventListener?.('change', sync)
     renderer.dispose()
-    flame?.dispose()
     effects.field.geometry.dispose()
     effects.field.material.dispose()
     effects.warmHalo.material.dispose()

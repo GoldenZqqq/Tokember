@@ -2,6 +2,15 @@ name: CI
 
 # Public quality gate. Never deploys to production hosts.
 # Production publish stays in deploy.yml (private monorepo ops only).
+#
+# Temporary private-minutes gate (revert next month via repo variable only):
+# - Public repos: always run on push/PR.
+# - Private repos: skip automatic runs unless PRIVATE_AUTOMATION_ENABLED=true.
+# - Manual workflow_dispatch always runs (private or public).
+# Restore private auto CI:
+#   gh variable set PRIVATE_AUTOMATION_ENABLED -R <private-repo> --body true
+# Pause private auto CI again (delete or set non-true):
+#   gh variable delete PRIVATE_AUTOMATION_ENABLED -R <private-repo>
 
 on:
   pull_request:
@@ -19,6 +28,11 @@ concurrency:
 jobs:
   hygiene:
     name: Public hygiene
+    # Root job only: quality / browser-e2e / container need this and skip when gated.
+    if: >
+      github.event_name == 'workflow_dispatch'
+      || github.event.repository.private != true
+      || vars.PRIVATE_AUTOMATION_ENABLED == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

@@ -17,8 +17,34 @@ async function expectNoHorizontalOverflow(page: import('@playwright/test').Page)
   expect(widths.document).toBeLessThanOrEqual(widths.viewport + 1)
 }
 
-async function expectSingleVisibleLanguageSwitch(page: import('@playwright/test').Page): Promise<void> {
-  await expect(page.locator('[role="group"][aria-label="Language"]:visible')).toHaveCount(1)
+async function expectNoFrontLanguageSwitch(page: import('@playwright/test').Page): Promise<void> {
+  // Locale switching lives only in admin settings (and the admin login gate).
+  // The dashboard / viewer gate intentionally omit LanguageSwitch.
+  await expect(page.locator('[role="group"][aria-label="Language"]')).toHaveCount(0)
+}
+
+async function expectAdminLanguageSwitch(page: import('@playwright/test').Page): Promise<void> {
+  // Settings keeps locale control in the sidebar always, and also in the page
+  // header from `sm` up — so desktop may show two switches. Assert presence,
+  // not a rigid count of one.
+  await expect(page.locator('[role="group"][aria-label="Language"]:visible').first()).toBeVisible()
+}
+
+async function expectDeviceFilterListsDemoDevice(page: import('@playwright/test').Page): Promise<void> {
+  // The device filter is responsive: desktop renders a native <select>
+  // (combobox) while narrow/PWA viewports render an icon menu button that opens
+  // a listbox. Prefer the *visible* control so a CSS-hidden desktop select does
+  // not short-circuit the mobile icon-menu path.
+  const nativeSelect = page.getByRole('combobox', { name: 'Filter devices' })
+  if (await nativeSelect.isVisible().catch(() => false)) {
+    await expect(nativeSelect).toContainText('Demo Device')
+    return
+  }
+  const menuButton = page.getByRole('button', { name: 'Filter devices' })
+  await expect(menuButton).toBeVisible()
+  await menuButton.click()
+  await expect(page.getByRole('listbox', { name: 'Filter devices' })).toContainText('Demo Device')
+  await menuButton.click()
 }
 
 async function expectModelCostVisible(page: import('@playwright/test').Page): Promise<void> {
@@ -35,8 +61,8 @@ test('viewer reaches the dashboard and keeps the viewport contained', async ({ p
   await page.goto('/')
   await loginViewer(page)
   await expect(page.getByRole('heading', { name: 'Today usage trend' })).toBeVisible()
-  await expect(page.getByRole('combobox', { name: 'Filter devices' })).toContainText('Demo Device')
-  await expectSingleVisibleLanguageSwitch(page)
+  await expectDeviceFilterListsDemoDevice(page)
+  await expectNoFrontLanguageSwitch(page)
   await expectModelCostVisible(page)
   await expectNoHorizontalOverflow(page)
 })
@@ -55,6 +81,7 @@ test('admin can inspect device and source health', async ({ page }) => {
   await page.getByLabel('Admin password').fill('e2e-admin-password')
   await page.getByRole('button', { name: 'Open settings' }).click()
   await expect(page.getByRole('heading', { name: 'Devices & collector' })).toBeVisible()
+  await expectAdminLanguageSwitch(page)
   await expect(page.getByRole('heading', { name: 'Demo Device' })).toBeVisible()
   await expect(page.getByText('Tool sources · 3')).toBeVisible()
   await expectNoHorizontalOverflow(page)

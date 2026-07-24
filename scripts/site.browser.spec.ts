@@ -103,7 +103,6 @@ test('renders a nonblank furnace and honors reduced motion', async ({ page }) =>
 
   await page.emulateMedia({ reducedMotion: 'reduce' })
   await expect(page.locator('#furnace-canvas')).toHaveCSS('display', 'none')
-  await expect(page.locator('#furnace-stage')).toHaveAttribute('data-flame-state', /flipbook|procedural/)
   const duration = await page.locator('.core-orbit-a').evaluate(element => {
     return Number.parseFloat(getComputedStyle(element).animationDuration)
   })
@@ -154,11 +153,10 @@ test('furnace core reveals on hover, focus, and tap', async ({ page }, testInfo)
   await expect(stage).toHaveAttribute('data-shell-pose', 'enclosing')
 })
 
-test('fire treatment changes rendered pixels while motion is enabled', async ({ page }) => {
+test('furnace core renders continuous motion while animation is enabled', async ({ page }) => {
   await page.goto('/')
   const stage = page.locator('#furnace-stage')
   await expect(stage).toHaveClass(/is-live/)
-  await expect(stage).toHaveAttribute('data-flame-state', /flipbook|procedural/)
   const first = await stage.screenshot()
   await page.waitForTimeout(240)
   const second = await stage.screenshot()
