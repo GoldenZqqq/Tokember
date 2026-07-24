@@ -1,7 +1,7 @@
 const PROVIDER_LABELS: Record<string, string> = {
   antigravity: 'Antigravity',
-  claude: 'ClaudeCode',
-  'claude-code': 'ClaudeCode',
+  claude: 'Claude Code',
+  'claude-code': 'Claude Code',
   cline: 'Cline',
   codex: 'Codex',
   copilot: 'Copilot',

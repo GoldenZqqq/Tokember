@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "source_commit": "7445ba320f10cd592040532c54809043bbbd9dee",
+  "source_commit": "9dced67818a4028ab8bcd73bee2e9c08a10340ea",
   "file_count": 352,
   "files": [
     {
@@ -29,7 +29,7 @@
     },
     {
       "path": ".github/workflows/ci.yml",
-      "sha256": "8190ec8405079336910f6571cec30da641147770a42f0a1575a13025d3264bdc"
+      "sha256": "573101e5bfc416f640060b3717a49ff9d36f1968bf5a43a39b4c26908ae4fa59"
     },
     {
       "path": ".github/workflows/pages.yml",
@@ -577,7 +577,7 @@
     },
     {
       "path": "scripts/site.browser.spec.ts",
-      "sha256": "b042c94993c7e8691a4c159cdb0a49038861eadac66252128717e23c7dd1b1be"
+      "sha256": "e1be1c6c652c36fd8472a28f37b1089cd06de009e2655d8099499dbba1c4fd55"
     },
     {
       "path": "scripts/site.playwright.config.ts",
@@ -585,7 +585,7 @@
     },
     {
       "path": "scripts/site.test.mjs",
-      "sha256": "3629c33408e6ef91ec56615e81c47e6c3c2b052239553958cce41af81be2fe47"
+      "sha256": "c85d6d87660c3e37f0fbbf848653bc4d25e2bedc702ab47a4243faec43cf20e0"
     },
     {
       "path": "scripts/stage-release.mjs",
@@ -925,11 +925,11 @@
     },
     {
       "path": "site/furnace-core.js",
-      "sha256": "860dab9e482d8b399f403231ca8c589b430c7f601a37e3ac87859b248429f488"
+      "sha256": "5f83bffe0d46a94bda468f190be754066a1dbffcdfab1ad5a16b756bc66ecbd3"
     },
     {
       "path": "site/index.html",
-      "sha256": "cfb2b0d50c9b4cd919983cf45e9be5a037a5b2e085bc1f221318e9459b577b0e"
+      "sha256": "1d9308f10e1c6ee7d02c3c485666c931003ff7e2d56d8444d90064240411befb"
     },
     {
       "path": "site/main.js",
@@ -937,7 +937,7 @@
     },
     {
       "path": "site/styles.css",
-      "sha256": "c57e894bdf1070e6257cabc08319a7d8d1a38d4ae0aed494b92b648e93b01a88"
+      "sha256": "5f8b945dc90e6b62994d13d2d5b35993e038723543935d7fad6abde4ebdd76f2"
     },
     {
       "path": "SUPPORT.md",
@@ -1065,7 +1065,7 @@
     },
     {
       "path": "web/src/auth/ViewerAccess.tsx",
-      "sha256": "1771fab04d7617266ad089311187c7a8796605fb61776fec8baeaf5bcf0ed2cd"
+      "sha256": "9467883f2a57e68e30bcc8b49b7e699e8ffec6e4e47adfb0a87e943d960d189b"
     },
     {
       "path": "web/src/burn/burn-intensity.test.ts",
@@ -1117,11 +1117,11 @@
     },
     {
       "path": "web/src/components/DashboardHeader.tsx",
-      "sha256": "c298a359ddb76e875ac1573e9623614737dfa75511a9f67bc3fe07f0310a53ba"
+      "sha256": "5a0cf83c66244f6cd38f733277ac756693e15d4b5c0182a2dfbd5a7fe1ebc905"
     },
     {
       "path": "web/src/components/DeviceSelector.tsx",
-      "sha256": "2c9a92ea7a13d932679017001fb3719566f59572ef3a5f16ee6e0c70759484df"
+      "sha256": "d2b2e50f5d6ae818b1ded418a3c4ec30f966625ba452f9c035868f7e4f47c22e"
     },
     {
       "path": "web/src/components/first-run-empty-state.test.tsx",
@@ -1365,7 +1365,7 @@
     },
     {
       "path": "web/src/model-display.test.ts",
-      "sha256": "b7aef54ce1eed2a3f7d5117cd3a459f61b0f3e90faba45ffed51091f7054b8c5"
+      "sha256": "af8fe5ce9a0a3a2a48b07d58db67a978744735869afb53bff36dfb23b8237873"
     },
     {
       "path": "web/src/model-display.ts",
@@ -1373,11 +1373,11 @@
     },
     {
       "path": "web/src/provider-display.test.ts",
-      "sha256": "3b2c37e6d239d73c95459f981fe545c5aaa0e98b3b4695db01528da4b548aaae"
+      "sha256": "72c5169e7820803aacb5d71268ed9d6826117a0d9fb3278b7ef304863513984e"
     },
     {
       "path": "web/src/provider-display.ts",
-      "sha256": "71b567ed2332f972822c5b04229dceb7c98c4381d0994e1cba36862fcd3f0645"
+      "sha256": "7c50214123b719fabc853cb6c975047ffc99d4e9ec81fc05dad8ce6a86f29c94"
     },
     {
       "path": "web/src/source-data.test.ts",

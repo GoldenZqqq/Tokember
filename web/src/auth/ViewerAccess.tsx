@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import type { ViewerAccessState } from './use-viewer-access'
-import { LanguageSwitch, useT } from '../i18n'
+import { useT } from '../i18n'
 
 interface ViewerAccessProps {
   state: ViewerAccessState
@@ -23,9 +23,8 @@ export function ViewerAccess(props: ViewerAccessProps) {
     text={props.state.error.message} action={t('common.retry')} onAction={props.onRetry} />
   return <div className="mx-auto flex min-h-[75vh] max-w-md items-center px-4">
     <form onSubmit={submit} className="w-full rounded-2xl border border-orange-500/15 bg-zinc-900/90 p-6 shadow-2xl">
-      <div className="mb-5 flex items-start justify-between gap-3">
+      <div className="mb-5">
         <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-orange-500/10 text-orange-400" aria-hidden="true">◉</div>
-        <LanguageSwitch />
       </div>
       <h1 className="text-2xl font-bold text-zinc-100">{t('viewer.title')}</h1>
       <p className="mt-2 text-sm leading-relaxed text-zinc-500">{t('viewer.body')}</p>

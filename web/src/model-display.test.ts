@@ -158,7 +158,7 @@ test('ModelTable source column uses tool display names not internal IDs', () => 
     ],
   })))
   assert.match(html, /Codex/)
-  assert.match(html, /ClaudeCode/)
+  assert.match(html, /Claude Code/)
   assert.match(html, /Grok Build/)
   assert.doesNotMatch(html, />codex</)
   assert.doesNotMatch(html, />claude</)
