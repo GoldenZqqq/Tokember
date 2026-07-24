@@ -21,6 +21,22 @@ async function expectSingleVisibleLanguageSwitch(page: import('@playwright/test'
   await expect(page.locator('[role="group"][aria-label="Language"]:visible')).toHaveCount(1)
 }
 
+async function expectDeviceFilterListsDemoDevice(page: import('@playwright/test').Page): Promise<void> {
+  // The device filter is responsive: desktop renders a native <select>
+  // (combobox) while narrow/PWA viewports render an icon menu button that opens
+  // a listbox. Assert whichever control is visible actually lists the device.
+  const nativeSelect = page.getByRole('combobox', { name: 'Filter devices' })
+  if ((await nativeSelect.count()) > 0) {
+    await expect(nativeSelect).toContainText('Demo Device')
+    return
+  }
+  const menuButton = page.getByRole('button', { name: 'Filter devices' })
+  await expect(menuButton).toBeVisible()
+  await menuButton.click()
+  await expect(page.getByRole('listbox', { name: 'Filter devices' })).toContainText('Demo Device')
+  await menuButton.click()
+}
+
 async function expectModelCostVisible(page: import('@playwright/test').Page): Promise<void> {
   const card = page.getByRole('heading', { name: 'Model breakdown' }).locator('xpath=../..')
   const scroller = card.locator('.overflow-x-auto')
@@ -35,7 +51,7 @@ test('viewer reaches the dashboard and keeps the viewport contained', async ({ p
   await page.goto('/')
   await loginViewer(page)
   await expect(page.getByRole('heading', { name: 'Today usage trend' })).toBeVisible()
-  await expect(page.getByRole('combobox', { name: 'Filter devices' })).toContainText('Demo Device')
+  await expectDeviceFilterListsDemoDevice(page)
   await expectSingleVisibleLanguageSwitch(page)
   await expectModelCostVisible(page)
   await expectNoHorizontalOverflow(page)
