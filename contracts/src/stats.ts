@@ -43,6 +43,10 @@ export interface ModelStatsRow extends StatsAggregateRow {
   tokens: number
   input_tokens: number
   output_tokens: number
+  /** Prompt-cache hits billed/counted separately from raw input. */
+  cache_read_tokens: number
+  /** Prompt-cache writes billed/counted separately from raw input. */
+  cache_creation_tokens: number
   unpriced_calls: number
 }
 

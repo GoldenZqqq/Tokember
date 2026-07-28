@@ -13,9 +13,9 @@ expose user data, credentials, or remote code paths.
 Preferred private channels (use the first available):
 
 1. GitHub **Security Advisories** / private vulnerability reporting on the
-   public Tokember repository (once published).
-2. Contact the maintainer via the private repository owner account for this
-   project while the public repo is being prepared.
+   public Tokember repository.
+2. Contact the repository owner privately if GitHub private reporting is
+   unavailable. Do not include exploit details in a public issue.
 
 Include:
 
@@ -44,3 +44,14 @@ If you accidentally commit a secret:
 2. Remove it from the default branch.
 3. Assume git history may still contain it until history is rewritten or the
    public export uses a clean root commit.
+
+## Dual-repository security fixes
+
+The public repository is the disclosure and release surface. While product
+source still originates in a private upstream, maintainers must land coordinated
+security fixes there and regenerate the public manifest before release.
+
+An urgent public-only fix freezes unrelated public merges and must return to the
+private upstream within one working day. Release artifacts remain blocked until
+the strict public-tree verification passes. See
+[Repository governance](./docs/repository-governance.md).

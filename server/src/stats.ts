@@ -212,6 +212,8 @@ function getModelStats(db: DB, filter: UsageFilter): ModelStatsRow[] {
     SELECT model, provider,
       SUM(input_tokens) AS input_tokens,
       SUM(output_tokens) AS output_tokens,
+      SUM(cache_read_tokens) AS cache_read_tokens,
+      SUM(cache_creation_tokens) AS cache_creation_tokens,
       ${aggregateSql()}
     FROM usage_records ${filter.sql}
     GROUP BY model, provider ORDER BY cost DESC
@@ -224,6 +226,8 @@ function getModelStats(db: DB, filter: UsageFilter): ModelStatsRow[] {
       tokens: aggregate.real_total_tokens,
       input_tokens: number(row.input_tokens),
       output_tokens: number(row.output_tokens),
+      cache_read_tokens: number(row.cache_read_tokens),
+      cache_creation_tokens: number(row.cache_creation_tokens),
       unpriced_calls: aggregate.pricing_coverage.unpriced_calls,
       ...aggregate,
     }

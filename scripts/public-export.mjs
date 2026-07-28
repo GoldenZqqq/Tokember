@@ -12,7 +12,8 @@ const PUBLIC_ROOT_FILES = new Set([
   '.dockerignore', '.env.example', '.gitattributes', '.gitignore', '.npmrc',
   'CHANGELOG.md', 'CODE_OF_CONDUCT.md', 'CONTRIBUTING.md', 'Dockerfile',
   'LICENSE', 'PRODUCT.md', 'README.md', 'SECURITY.md', 'SUPPORT.md',
-  'docker-compose.yml', 'package-lock.json', 'package.json', 'playwright.config.ts',
+  'docker-compose.yml', 'mise.toml', 'package-lock.json', 'package.json',
+  'playwright.config.ts',
 ])
 
 const PUBLIC_PREFIXES = [
@@ -86,7 +87,7 @@ export function planPublicExport(entries) {
   return publicEntries.sort((left, right) => left.path.localeCompare(right.path))
 }
 
-function sha256(value) {
+export function sha256(value) {
   return createHash('sha256').update(value).digest('hex')
 }
 
@@ -99,15 +100,19 @@ function validateOutputPath(workspaceRoot, outputDir) {
   return { workspace, output }
 }
 
-async function writePublicFiles(output, entries, readBlob) {
+async function writePublicBlob(output, entry, content) {
+  const target = join(output, ...entry.path.split('/'))
+  await mkdir(dirname(target), { recursive: true })
+  await writeFile(target, content, { flag: 'wx' })
+  if (entry.mode === '100755') await chmod(target, 0o755)
+}
+
+export async function buildPublicFileManifest(entries, readBlob, writeBlob = null) {
   const files = []
-  for (const entry of entries) {
-    const target = join(output, ...entry.path.split('/'))
-    await mkdir(dirname(target), { recursive: true })
+  for (const entry of planPublicExport(entries)) {
     const content = await readBlob(entry)
     if (!Buffer.isBuffer(content)) throw new Error(`invalid git blob: ${entry.path}`)
-    await writeFile(target, content, { flag: 'wx' })
-    if (entry.mode === '100755') await chmod(target, 0o755)
+    if (writeBlob) await writeBlob(entry, content)
     files.push({ path: entry.path, sha256: sha256(content) })
   }
   return files
@@ -117,10 +122,13 @@ export async function stagePublicExport(options) {
   const { output } = validateOutputPath(options.workspaceRoot, options.outputDir)
   const commit = String(options.sourceCommit ?? '').toLowerCase()
   if (!COMMIT_PATTERN.test(commit)) throw new Error('invalid source commit')
-  const entries = planPublicExport(options.entries)
   await mkdir(output, { recursive: false })
   try {
-    const files = await writePublicFiles(output, entries, options.readBlob)
+    const files = await buildPublicFileManifest(
+      options.entries,
+      options.readBlob,
+      (entry, content) => writePublicBlob(output, entry, content),
+    )
     const manifest = { schema_version: 1, source_commit: commit, file_count: files.length, files }
     await writeFile(join(output, 'PUBLIC_EXPORT.json'), `${JSON.stringify(manifest, null, 2)}\n`, {
       encoding: 'utf8', flag: 'wx',
@@ -137,6 +145,7 @@ function gitOutput(workspaceRoot, args, encoding = null) {
     cwd: workspaceRoot,
     encoding,
     maxBuffer: 64 * 1024 * 1024,
+    stdio: ['ignore', 'pipe', 'pipe'],
     windowsHide: true,
   })
 }
@@ -148,6 +157,10 @@ export function listGitEntries(workspaceRoot, commit) {
     if (!match) throw new Error('invalid git tree entry')
     return { mode: match[1], type: match[2], object: match[3], path: match[4] }
   })
+}
+
+export function readGitBlob(workspaceRoot, commit, path) {
+  return gitOutput(workspaceRoot, ['show', `${commit}:${path}`])
 }
 
 function parseArgs(argv) {
@@ -172,7 +185,7 @@ async function main() {
     outputDir: options.output,
     sourceCommit,
     entries,
-    readBlob: entry => gitOutput(workspaceRoot, ['show', `${sourceCommit}:${entry.path}`]),
+    readBlob: entry => readGitBlob(workspaceRoot, sourceCommit, entry.path),
   })
   process.stdout.write(`public export staged: ${manifest.file_count} files from ${sourceCommit.slice(0, 12)}\n`)
 }

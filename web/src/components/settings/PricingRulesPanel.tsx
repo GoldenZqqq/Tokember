@@ -27,6 +27,22 @@ function priceSummary(rule: PricingRule, t: TranslateFn): string {
   return t('pricingUi.priceInOut', { input: rule.input_price, output: rule.output_price })
 }
 
+/** Shows whether a catalog rule still tracks upstream prices or has been edited. */
+function OriginBadge({ rule, t }: { rule: PricingRule; t: TranslateFn }) {
+  if (rule.origin !== 'builtin') return null
+  const edited = rule.user_modified === 1
+  return (
+    <span
+      title={t(edited ? 'pricingUi.customizedHint' : 'pricingUi.builtinHint')}
+      className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium ring-1 ${
+        edited ? 'text-amber-300 ring-amber-500/25' : 'text-zinc-400 ring-white/10'
+      }`}
+    >
+      {t(edited ? 'pricingUi.customized' : 'pricingUi.builtin')}
+    </span>
+  )
+}
+
 export function PricingRulesPanel() {
   const t = useT()
   const [rules, setRules] = useState<PricingRule[]>([])
@@ -224,6 +240,7 @@ function RuleRow({
               {rule.model || t('pricingUi.unnamedModel')}
             </span>
             {!rule.enabled && <span className="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium text-zinc-500 ring-1 ring-white/10">{t('pricingUi.disabled')}</span>}
+            <OriginBadge rule={rule} t={t} />
           </div>
           <div className="mt-0.5 truncate text-[11px] text-zinc-500">
             {rule.source ? t('pricingUi.sourceOverride', { source: providerDisplayName(rule.source) }) : t('pricingUi.globalOfficial')}

@@ -71,7 +71,7 @@ function Find-TokemberNode {
     }
     return $nodeCandidates | Select-Object -Unique | Where-Object {
         $versionText = & $_ --version 2>$null
-        $versionText -match '^v(?<major>\d+)\.' -and [int]$Matches.major -ge 22
+        $versionText -match '^v(?<major>\d+)\.' -and [int]$Matches.major -eq 22
     } | Select-Object -First 1
 }
 
@@ -99,7 +99,7 @@ function Invoke-Doctor {
     if ($node) {
         Write-Host "Node: $node ($(& $node --version))"
     } else {
-        Write-Host 'Node: MISSING (need 22+)' -ForegroundColor Yellow
+        Write-Host 'Node: MISSING (need Node 22.x)' -ForegroundColor Yellow
     }
     if (Test-Path $CollectorDist) {
         Write-Host "Runtime: dist ($CollectorDist)"
@@ -174,9 +174,9 @@ function Invoke-Install {
         return
     }
 
-    # 1. Find a Node.js version that supports node:sqlite (22+)
+    # 1. Find the certified Node.js major that supports node:sqlite.
     $node = Find-TokemberNode
-    if (-not $node) { throw "Node.js 22+ not found. Install Node 22 or newer first." }
+    if (-not $node) { throw "Node.js 22.x not found. Install Node 22 first." }
     Write-Host "node: $node ($(& $node --version))" -ForegroundColor Cyan
 
     # 2. Prefer packaged dist; otherwise ensure tsx is available

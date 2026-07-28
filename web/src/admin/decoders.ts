@@ -21,13 +21,14 @@ import {
 } from '../data/decoders'
 import type {
   ClassifyModelResult, DeviceSummary, MaintenanceActionResult,
-  MaintenanceSummary, ModelAlias, PricingMode, PricingRule,
+  MaintenanceSummary, ModelAlias, PricingMode, PricingRule, PricingRuleOrigin,
   RepriceResult, SystemInfo,
 } from './types'
 import type { RecoveryStatus } from './types'
 import { decodeCostCoverage } from '../data/public-decoders'
 
 const PRICING_MODES: PricingMode[] = ['priced', 'free', 'included']
+const PRICING_ORIGINS: PricingRuleOrigin[] = ['builtin', 'user']
 const RUN_STATUSES = ['success', 'partial', 'failed'] as const
 const SOURCE_STATUSES = ['success', 'collection_failed', 'upload_failed'] as const
 const DEVICE_STATUSES = ['healthy', 'degraded', 'offline', 'never'] as const
@@ -77,6 +78,8 @@ function pricingRule(value: unknown): PricingRule {
     output_price: numberValue(row.output_price), cache_read_price: numberValue(row.cache_read_price),
     cache_write_price: numberValue(row.cache_write_price), enabled: numberValue(row.enabled),
     created_at: stringValue(row.created_at), updated_at: stringValue(row.updated_at),
+    origin: literalValue(row.origin, PRICING_ORIGINS),
+    user_modified: numberValue(row.user_modified),
     aliases: arrayValue(row.aliases).map(modelAlias),
   }
 }

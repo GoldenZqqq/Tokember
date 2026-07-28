@@ -44,6 +44,14 @@ jobs:
       - name: Scan working tree for private markers
         run: node scripts/scan-public-hygiene.mjs
 
+      - name: Validate public export manifest
+        if: github.event.repository.private != true
+        run: npm run public:verify -- --public-root . --manifest-only
+
+      - name: Verify exported public tree
+        if: github.event.repository.private != true && github.event_name != 'pull_request'
+        run: npm run public:verify -- --public-root .
+
   # Linux-only gate: private-repo Actions minutes bill win×2 / mac×10.
   # Local Windows collector installs from source and is not covered by this job.
   # Re-enable a full matrix via a dedicated scheduled/manual workflow if needed.

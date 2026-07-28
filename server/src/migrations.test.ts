@@ -6,6 +6,7 @@ import {
   getSchemaVersion,
   LATEST_SCHEMA_VERSION,
   runSchemaMigrations,
+  SCHEMA_MIGRATIONS,
   type SchemaMigration,
 } from './migrations.js'
 
@@ -325,5 +326,39 @@ test('applied migration name drift is rejected', () => {
   assert.throws(() => runSchemaMigrations(db, [
     { version: 1, name: 'expected-name', up: () => {} },
   ]), /Unknown schema migration/)
+  db.close()
+})
+
+test('pricing catalog columns default existing rules to operator ownership', () => {
+  const db = new Database(':memory:')
+  db.exec(`
+    CREATE TABLE pricing_rules (
+      id INTEGER PRIMARY KEY AUTOINCREMENT, source TEXT, model TEXT NOT NULL,
+      mode TEXT NOT NULL DEFAULT 'priced', input_price REAL NOT NULL DEFAULT 0,
+      output_price REAL NOT NULL DEFAULT 0, cache_read_price REAL NOT NULL DEFAULT 0,
+      cache_write_price REAL NOT NULL DEFAULT 0, enabled INTEGER NOT NULL DEFAULT 1,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    INSERT INTO pricing_rules (source, model, input_price) VALUES
+      (NULL, 'gateway-priced-model', 0.435),
+      ('hermes', 'override-model', 1);
+  `)
+
+  runSchemaMigrations(db, SCHEMA_MIGRATIONS.filter(m => m.name === 'pricing-catalog-origin'))
+
+  // A price the operator tuned by hand predates the catalog, so it must stay
+  // user-owned; otherwise an upgrade would replace it with the public rate.
+  assert.deepEqual(db.prepare(`
+    SELECT model, origin, user_modified FROM pricing_rules ORDER BY model
+  `).all(), [
+    { model: 'gateway-priced-model', origin: 'user', user_modified: 0 },
+    { model: 'override-model', origin: 'user', user_modified: 0 },
+  ])
+
+  runSchemaMigrations(db, SCHEMA_MIGRATIONS.filter(m => m.name === 'pricing-catalog-origin'))
+  assert.equal((db.prepare(`
+    SELECT COUNT(*) AS count FROM pricing_rules WHERE origin = 'user'
+  `).get() as { count: number }).count, 2)
   db.close()
 })

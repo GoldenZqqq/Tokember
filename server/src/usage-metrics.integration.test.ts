@@ -89,6 +89,14 @@ async function assertOverallStats(app: ApiApp): Promise<void> {
   for (const rows of [stats.byProvider, stats.byModel, stats.byDevice, stats.daily]) {
     assertConservation(rows)
   }
+  // Model breakdown must surface cache counters (not only fresh input/output).
+  const cacheRead = stats.byModel.reduce((sum, row) => sum + row.cache_read_tokens, 0)
+  const cacheCreate = stats.byModel.reduce((sum, row) => sum + row.cache_creation_tokens, 0)
+  assert.equal(cacheRead, stats.totals.total_cache_read)
+  assert.equal(cacheCreate, stats.totals.total_cache_creation)
+  assert.ok(stats.byModel.every(row =>
+    Number.isFinite(row.cache_read_tokens) && Number.isFinite(row.cache_creation_tokens),
+  ))
 }
 
 async function getYear(app: ApiApp, year: number): Promise<YearStatsResponse> {

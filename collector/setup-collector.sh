@@ -71,7 +71,7 @@ find_node() {
     version="$("$candidate" --version 2>/dev/null || true)"
     if [[ "$version" =~ ^v([0-9]+)\. ]]; then
       major="${BASH_REMATCH[1]}"
-      if (( major >= 22 )); then
+      if (( major == 22 )); then
         echo "$candidate"
         return 0
       fi
@@ -281,7 +281,7 @@ doctor() {
   if node_bin="$(find_node)"; then
     echo "Node: $node_bin ($("$node_bin" --version))"
   else
-    echo "Node: MISSING (need 22+)"
+    echo "Node: MISSING (need Node 22.x)"
   fi
   if [[ -f "$DIST_ENTRY" ]]; then
     echo "Runtime: dist ($DIST_ENTRY)"
@@ -337,7 +337,7 @@ do_install() {
   fi
   local node_bin
   node_bin="$(find_node)" || {
-    echo "Node.js 22+ not found. Install Node 22 or newer first." >&2
+    echo "Node.js 22.x not found. Install Node 22 first." >&2
     exit 1
   }
   echo "node: $node_bin ($("$node_bin" --version))"

@@ -5,7 +5,7 @@ import { resolveLegacyAwareHomePath } from './runtime-paths.js'
 
 type RuntimeEnv = NodeJS.ProcessEnv
 const DEFAULT_SCHEDULE_INTERVAL_MINUTES = 30
-const COLLECTOR_VERSION = '0.1.0'
+const COLLECTOR_VERSION = '0.2.0'
 export type ScheduleMode = 'fixed' | 'adaptive'
 
 function firstConfigured(env: RuntimeEnv, keys: readonly string[]): string {

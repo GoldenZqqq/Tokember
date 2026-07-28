@@ -47,6 +47,7 @@ test('diagnostic report is an allowlist and redacts local identity', async () =>
       'runtime', 'config', 'sources', 'scheduler', 'adaptive',
     ])
     assert.equal(report.platform, 'windows')
+    assert.deepEqual(report.node, { major: 22, supported: true })
     assert.equal(report.runtime.mode, 'dist')
     assert.equal(report.config.server_configured, true)
     assert.equal(report.config.credential_configured, true)
@@ -58,6 +59,21 @@ test('diagnostic report is an allowlist and redacts local identity', async () =>
     assert.deepEqual(report.adaptive, { version: 1, band: 'recent', failure_count: 2 })
     const serialized = JSON.stringify(report)
     assert.doesNotMatch(serialized, /private-secret|private-user|tokember-diagnostics|https:\/\//)
+  } finally {
+    await rm(paths.root, { recursive: true, force: true })
+  }
+})
+
+test('diagnostics report Node 24 as unsupported', async () => {
+  const paths = await fixture()
+  try {
+    const report = buildDiagnosticReport({
+      collectorDir: paths.collector,
+      home: paths.home,
+      nodeVersion: '24.18.0',
+      schedulerStatus: 'unknown',
+    })
+    assert.deepEqual(report.node, { major: 24, supported: false })
   } finally {
     await rm(paths.root, { recursive: true, force: true })
   }

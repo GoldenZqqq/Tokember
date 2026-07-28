@@ -7,7 +7,7 @@ cost dashboard.
 
 Requirements:
 
-- Node.js 22+
+- Node.js 22.x (`>=22 <23`; Node 24 is not currently certified)
 - npm (repo uses `package-lock.json`)
 - Python 3 for Hermes / Sub2API collector tests
 
@@ -23,7 +23,7 @@ Useful commands:
 | `npm run dev:server` | API server |
 | `npm run dev:web` | Web dashboard |
 | `npm run collect` | Native TypeScript collector |
-| `npm run verify` | Full gate: typecheck, tests, build, dist smoke |
+| `npm run verify` | Full gate: runtime/installer checks, typecheck, tests, build, dist smoke |
 
 ## Local collector configuration
 
@@ -44,8 +44,23 @@ paths.
 - Device identity is a machine; tools are sources/providers under that device.
 - Keep public examples on reserved domains (`tokember.example`), not personal hosts.
 
-Project-specific contracts live under `.trellis/spec/` when developing inside
-this monorepo.
+## Repository flow
+
+The public repository is the contribution and distribution surface. During the
+current transition, maintainers preserve a private source repository for product
+and production operations, then publish product changes through a verified
+allowlist export. Contributors do not need access to that private repository.
+
+Open a normal public pull request and leave `PUBLIC_EXPORT.json` unchanged. A
+maintainer will replay an accepted change into the source repository with
+`Co-authored-by` attribution, run the full private gate, and publish a sync pull
+request with the regenerated manifest. The original pull request will link to
+the attributed commit and sync pull request before it is closed as superseded.
+
+Direct public-only merges are reserved for urgent fixes. They freeze unrelated
+public merges until the same patch has returned to the source repository and a
+verified export reconciles `master`. See
+[Repository governance](./docs/repository-governance.md) for the full contract.
 
 ## Pull requests
 
@@ -53,6 +68,7 @@ this monorepo.
 2. Describe what changed and how you validated it.
 3. Note any schema, env, or collector state migration impact.
 4. Do not include secrets, personal domains, or production inventory dumps.
+5. Do not regenerate or hand-edit `PUBLIC_EXPORT.json` in a contribution PR.
 
 ## Versioning
 

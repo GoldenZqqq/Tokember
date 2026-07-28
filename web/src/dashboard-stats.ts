@@ -18,7 +18,18 @@ export interface StatsAggregateView {
   pricing_coverage: CostCoverage
   daily: { date: string; since: string; until: string; cost: number; requests: number; input_tokens: number; output_tokens: number; real_total_tokens: number }[]
   by_provider: { provider: string; cost: number; requests: number; real_total_tokens: number }[]
-  by_model: { model: string; provider: string; cost: number; requests: number; real_total_tokens: number; input_tokens: number; output_tokens: number; unpriced_requests: number }[]
+  by_model: {
+    model: string
+    provider: string
+    cost: number
+    requests: number
+    real_total_tokens: number
+    input_tokens: number
+    output_tokens: number
+    cache_read_tokens: number
+    cache_creation_tokens: number
+    unpriced_requests: number
+  }[]
   by_device: { device: string; provider: string; cost: number; requests: number; real_total_tokens: number }[]
   attribution: { status: string; records: number; cost: number; requests: number; real_total_tokens: number }[]
   project_options: { group_id: number; name: string; members: number }[]
@@ -92,6 +103,8 @@ function mapStats(data: StatsResponse): StatsAggregateView {
       model: row.model, provider: row.provider, cost: row.cost, requests: row.calls,
       real_total_tokens: row.real_total_tokens,
       input_tokens: row.input_tokens, output_tokens: row.output_tokens,
+      cache_read_tokens: row.cache_read_tokens,
+      cache_creation_tokens: row.cache_creation_tokens,
       unpriced_requests: row.pricing_coverage.unpriced_calls,
     })),
     by_device: data.byDevice.map(row => ({

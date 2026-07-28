@@ -11,7 +11,7 @@ import { calculateRuleCost, repriceUnpricedRecords, resolvePricing, type Pricing
 const rule: PricingRule = {
   id: 1, source: null, model: 'model-a', mode: 'priced',
   input_price: 2, output_price: 8, cache_read_price: 0.2, cache_write_price: 3,
-  enabled: 1, created_at: '', updated_at: '',
+  enabled: 1, origin: 'user', user_modified: 0, created_at: '', updated_at: '',
 }
 
 test('migrates the legacy usage schema idempotently', () => {
@@ -114,8 +114,10 @@ test('migrates provider pricing rules into global rules and source overrides', (
   const columns = migrated.prepare('PRAGMA table_info(pricing_rules)').all() as { name: string }[]
   assert.ok(columns.some(column => column.name === 'source'))
   assert.ok(!columns.some(column => column.name === 'provider'))
+  // Scope to migrated rows: the built-in catalog also seeds global rules here.
   assert.deepEqual(migrated.prepare(`
-    SELECT id, source, model, input_price FROM pricing_rules ORDER BY id
+    SELECT id, source, model, input_price FROM pricing_rules
+    WHERE origin = 'user' ORDER BY id
   `).all(), [
     { id: 1, source: null, model: 'same-model', input_price: 2 },
     { id: 3, source: 'claude', model: 'conflict-model', input_price: 1 },
@@ -127,7 +129,9 @@ test('migrates provider pricing rules into global rules and source overrides', (
   migrated.close()
 
   const reopened = initDB(path)
-  assert.equal((reopened.prepare('SELECT COUNT(*) AS count FROM pricing_rules').get() as { count: number }).count, 3)
+  assert.equal((reopened.prepare(`
+    SELECT COUNT(*) AS count FROM pricing_rules WHERE origin = 'user'
+  `).get() as { count: number }).count, 3)
   reopened.close()
   rmSync(directory, { recursive: true, force: true })
 })

@@ -14,6 +14,10 @@ export interface PricingRule {
   cache_read_price: number
   cache_write_price: number
   enabled: number
+  /** `builtin` rows come from the shipped catalog; `user` rows are operator-owned. */
+  origin: 'builtin' | 'user'
+  /** Set once an admin edits the rule, which freezes it against catalog updates. */
+  user_modified: number
   created_at: string
   updated_at: string
 }

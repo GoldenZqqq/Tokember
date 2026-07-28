@@ -80,11 +80,13 @@ test('model table and comparison panel keep the same tool display names', () => 
     data: [
       {
         model: 'gpt-5.6-sol', provider: 'codex', cost: 1, requests: 1,
-        real_total_tokens: 2, input_tokens: 1, output_tokens: 1, unpriced_requests: 0,
+        real_total_tokens: 2, input_tokens: 1, output_tokens: 1,
+        cache_read_tokens: 0, cache_creation_tokens: 0, unpriced_requests: 0,
       },
       {
         model: 'claude-opus-4-6', provider: 'claude', cost: 2, requests: 1,
-        real_total_tokens: 2, input_tokens: 1, output_tokens: 1, unpriced_requests: 0,
+        real_total_tokens: 2, input_tokens: 1, output_tokens: 1,
+        cache_read_tokens: 0, cache_creation_tokens: 0, unpriced_requests: 0,
       },
     ],
   })))
@@ -98,7 +100,8 @@ test('model table and comparison panel keep the same tool display names', () => 
     by_provider: [{ provider: 'claude', cost: 2, requests: 1, real_total_tokens: 10 }],
     by_model: [{
       model: 'claude-opus-4-6', provider: 'claude', cost: 2, requests: 1,
-      real_total_tokens: 10, input_tokens: 6, output_tokens: 4, unpriced_requests: 0,
+      real_total_tokens: 10, input_tokens: 6, output_tokens: 4,
+      cache_read_tokens: 0, cache_creation_tokens: 0, unpriced_requests: 0,
     }],
   }
   const previous = {
