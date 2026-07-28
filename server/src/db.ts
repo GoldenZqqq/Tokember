@@ -2,6 +2,8 @@ import Database, { type Database as DatabaseType } from 'better-sqlite3'
 import { existsSync } from 'fs'
 import { basename, dirname, join } from 'path'
 import { runSchemaMigrations } from './migrations.js'
+import { syncPricingCatalog } from './pricing-catalog.js'
+import { repriceUnpricedRecords } from './pricing.js'
 import { registerUsageMetricFunctions } from './usage-metrics.js'
 
 const ACTIVITY_ONLY_MIGRATION = '2026-07-16-activity-only-remove-sub2api'
@@ -76,6 +78,18 @@ function applyHermesDeviceMigration(db: DatabaseType): void {
     db.prepare('INSERT INTO app_migrations (name) VALUES (?)')
       .run(HERMES_DEVICE_MIGRATION)
   })()
+}
+
+/**
+ * Merge the built-in catalog, then price the history it just made priceable.
+ *
+ * Repricing only runs when the catalog actually changed something, so a normal
+ * restart stays a single SELECT instead of a full scan of unpriced rows.
+ */
+function applyPricingCatalog(db: DatabaseType): void {
+  const sync = syncPricingCatalog(db)
+  if (sync.inserted === 0 && sync.updated === 0) return
+  repriceUnpricedRecords(db, true)
 }
 
 export function resolveDbPath(dbPath?: string, cwd = process.cwd()): string {
@@ -156,6 +170,7 @@ export function initDB(dbPath?: string): DatabaseType {
   runSchemaMigrations(db)
   applyActivityOnlyMigration(db)
   applyHermesDeviceMigration(db)
+  applyPricingCatalog(db)
 
   return db
 }

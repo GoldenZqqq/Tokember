@@ -816,3 +816,51 @@ test('Antigravity native history starts after the last CodeBurn-derived row', as
   assert.equal(stored.count, 6)
   db.close()
 })
+
+test('editing a rule marks it user-modified so catalog updates stop touching it', async () => {
+  const db = initDB(':memory:')
+  const app = apiRoutes(db)
+  const login = await app.request('/admin/login', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ password: 'development' }),
+  })
+  const cookie = cookieFrom(login)
+
+  const listed = await (await app.request('/admin/pricing/rules', {
+    headers: { Cookie: cookie },
+  })).json() as any
+  const builtin = listed.rules.find((rule: any) => rule.model === 'claude-opus-5')
+  assert.equal(builtin.origin, 'builtin')
+  assert.equal(builtin.user_modified, 0)
+
+  // A gateway deployment lowers the price; upgrades must respect that.
+  const edited = await app.request(`/admin/pricing/rules/${builtin.id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', Cookie: cookie },
+    body: JSON.stringify({
+      source: null, model: 'claude-opus-5', mode: 'priced',
+      input_price: 1, output_price: 2, cache_read_price: 0, cache_write_price: 0,
+      enabled: 1,
+      // The server owns these two; a client must not be able to set them.
+      origin: 'builtin', user_modified: 0,
+    }),
+  })
+  assert.equal(edited.status, 200)
+  const updated = (await edited.json() as any).rule
+  assert.equal(updated.user_modified, 1)
+  assert.equal(updated.input_price, 1)
+
+  const created = await app.request('/admin/pricing/rules', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Cookie: cookie },
+    body: JSON.stringify({
+      source: null, model: 'operator-model', mode: 'priced',
+      input_price: 9, output_price: 9, cache_read_price: 0, cache_write_price: 0,
+      enabled: 1, origin: 'builtin', user_modified: 0,
+    }),
+  })
+  assert.equal(created.status, 201)
+  // A rule the operator created is user-owned regardless of the payload.
+  assert.equal((await created.json() as any).rule.origin, 'user')
+  db.close()
+})

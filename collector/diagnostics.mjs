@@ -170,7 +170,7 @@ export function buildDiagnosticReport(options = {}) {
     generated_at: (options.now ?? new Date()).toISOString(),
     platform,
     architecture: options.architecture ?? hostArch(),
-    node: { major: Number.isInteger(nodeMajor) ? nodeMajor : 0, supported: nodeMajor >= 22 },
+    node: { major: Number.isInteger(nodeMajor) ? nodeMajor : 0, supported: nodeMajor === 22 },
     runtime: { mode: RUNTIME_MODES.has(runtime) ? runtime : 'missing' },
     config: {
       present: exists(configPath),

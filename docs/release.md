@@ -6,7 +6,8 @@ scope here.
 
 ## Local collector pack
 
-Prerequisites: Node 22+, repository root, collector already built.
+Prerequisites: Node 22.x (`>=22 <23`), repository root, collector already built.
+Node 24 is not currently certified.
 
 ```bash
 npm ci
@@ -34,25 +35,34 @@ After multi-arch build (or with known tags):
 ```bash
 node scripts/package-image-manifest.mjs \
   --output image-manifest.json \
-  --version 0.1.0 \
+  --version 0.2.0 \
   --commit "$(git rev-parse HEAD)" \
-  --image linux/amd64=ghcr.io/example/tokember:0.1.0 \
-  --image linux/arm64=ghcr.io/example/tokember:0.1.0@sha256:...
+  --image linux/amd64=ghcr.io/example/tokember:0.2.0 \
+  --image linux/arm64=ghcr.io/example/tokember:0.2.0@sha256:...
 ```
 
 ## GitHub Release workflow
 
 `.github/workflows/release.yml` runs on:
 
+- a weekly schedule (verification only)
 - push of tags `v*`
 - `workflow_dispatch` (manual)
 
 Jobs:
 
-1. **Package collector** — build dist, archive, upload artifacts  
-2. **Server images** — buildx `linux/amd64` + `linux/arm64`; push to GHCR when
+1. **Platform release gate** — on the exact public repository, run Node 22
+   `npm ci` + `npm run verify` on Windows, macOS, and Linux; Windows also runs
+   the unchanged default-worker Chromium E2E command
+2. **Package collector** — after the matrix, build dist, archive, upload artifacts
+3. **Server images** — after the matrix, buildx `linux/amd64` + `linux/arm64`; push to GHCR when
    token allows, otherwise local build + manifest only  
-3. **Publish** — assemble assets + `SHA256SUMS`, create GitHub Release
+4. **Publish** — assemble assets + `SHA256SUMS`, create GitHub Release
+
+Scheduled runs stop after verification. Collector/image packaging and Release
+publication are restricted to tag or manual events, so a timer never produces
+distribution artifacts. Pull requests continue to use the faster Ubuntu CI
+gate and its existing four required contexts.
 
 It never SSHs to production hosts.
 

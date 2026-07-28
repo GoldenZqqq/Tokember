@@ -210,10 +210,13 @@ export function adminRoutes(
       if (incompatible) return c.json({ error: '请先移除与新来源不兼容的模型别名' }, 409)
     }
     try {
+      // Editing a rule claims it for the operator: the catalog must never
+      // overwrite a price someone chose by hand.
       const result = db.prepare(`
         UPDATE pricing_rules SET source = ?, model = ?, mode = ?,
           input_price = ?, output_price = ?, cache_read_price = ?,
-          cache_write_price = ?, enabled = ?, updated_at = datetime('now')
+          cache_write_price = ?, enabled = ?, user_modified = 1,
+          updated_at = datetime('now')
         WHERE id = ?
       `).run(input.source, input.model, input.mode, input.input_price,
         input.output_price, input.cache_read_price, input.cache_write_price, input.enabled, id)

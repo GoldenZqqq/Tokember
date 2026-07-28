@@ -23,6 +23,7 @@ and a year heatmap; Admin manages pricing, devices, and audit.
 | [docs/COMPATIBILITY.md](./docs/COMPATIBILITY.md) | OS, runtime, tool matrix |
 | [docs/data-lifecycle.md](./docs/data-lifecycle.md) | Retention, export, protocol, upgrades |
 | [docs/release.md](./docs/release.md) | Packaging & GitHub Releases |
+| [docs/repository-governance.md](./docs/repository-governance.md) | Public/private source flow and contribution ingress |
 | [docs/faq.md](./docs/faq.md) | Common issues |
 
 ![Tokember Dashboard with deterministic demo usage](./docs/images/dashboard.png)
@@ -89,7 +90,7 @@ Details: [docs/privacy.md](./docs/privacy.md).
 
 ## Requirements
 
-- **Node.js ≥ 22**
+- **Node.js 22.x** (`>=22 <23`; Node 24 is not currently certified)
 - Optional: **Python 3.12+** (Hermes only)
 - Optional: **Docker** (Compose path below)
 

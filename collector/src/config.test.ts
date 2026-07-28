@@ -23,7 +23,7 @@ test('Tokember collector variables take precedence', () => {
   assert.equal(['windows', 'macos', 'linux', 'other'].includes(config.machine.platform), true)
   assert.equal(config.machine.architecture.length > 0, true)
   assert.equal(config.scheduleIntervalMinutes, 30)
-  assert.equal(config.collectorVersion, '0.1.0')
+  assert.equal(config.collectorVersion, '0.2.0')
   assert.equal(config.attributionEnabled, true)
   assert.equal(config.attributionSecretFile, 'C:\\secure\\attribution-secret')
 })

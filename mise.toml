@@ -1,0 +1,4 @@
+[tools]
+# Tokember certifies Node 22.x only. `verify:runtime` rejects other majors
+# because better-sqlite3 is compiled against a single native ABI.
+node = "22"

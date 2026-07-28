@@ -11,7 +11,7 @@ import { calculateRuleCost, type PricingRule } from './pricing.js'
 const rule: PricingRule = {
   id: 1, source: null, model: 'model-a', mode: 'priced',
   input_price: 2, output_price: 8, cache_read_price: 0.2, cache_write_price: 3,
-  enabled: 1, created_at: '', updated_at: '',
+  enabled: 1, origin: 'user', user_modified: 0, created_at: '', updated_at: '',
 }
 
 test('normalizes cache-inclusive input and separate reasoning exactly once', () => {

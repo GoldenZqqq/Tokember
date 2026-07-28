@@ -4,6 +4,8 @@ import type { MachinePlatform } from '@tokember/contracts/device'
 
 export type PricingMode = 'priced' | 'free' | 'included'
 
+export type PricingRuleOrigin = 'builtin' | 'user'
+
 export interface ModelAlias {
   id: number
   pricing_rule_id: number
@@ -24,10 +26,18 @@ export interface PricingRule {
   enabled: number
   created_at: string
   updated_at: string
+  /** `builtin` rules come from the shipped catalog; `user` rules are operator-owned. */
+  origin: PricingRuleOrigin
+  /** Set once an admin edits the rule, which stops catalog updates overwriting it. */
+  user_modified: number
   aliases: ModelAlias[]
 }
 
-export type PricingRuleInput = Omit<PricingRule, 'id' | 'created_at' | 'updated_at' | 'aliases'>
+/** The server owns origin and user_modified, so a rule payload must never carry them. */
+export type PricingRuleInput = Omit<
+  PricingRule,
+  'id' | 'created_at' | 'updated_at' | 'aliases' | 'origin' | 'user_modified'
+>
 
 export interface RepriceResult {
   matched: number

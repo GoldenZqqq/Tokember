@@ -69,6 +69,11 @@ test('translate resolves en and zh keys with params', () => {
     translate(catalogs.en, 'modelTable.billingTiers', { n: 2 }),
     '2 billing tiers',
   )
+  assert.equal(
+    translate(catalogs.en, 'modelTable.cacheDetail', { read: '4.4M', write: '0.4M' }),
+    'Cache read 4.4M · write 0.4M',
+  )
+  assert.match(translate(catalogs.zh, 'modelTable.subtitle'), /缓存/)
 })
 
 test('translate falls back to en then key', () => {

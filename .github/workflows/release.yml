@@ -3,6 +3,8 @@ name: Release
 # Public distribution only. Never deploys to production hosts (see deploy.yml).
 
 on:
+  schedule:
+    - cron: '17 4 * * 1'
   push:
     tags:
       - 'v*'
@@ -14,18 +16,63 @@ on:
         type: string
 
 permissions:
-  contents: write
-  packages: write
-  id-token: write
-  attestations: write
+  contents: read
 
 concurrency:
   group: release-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
+  platform-release-gate:
+    name: Platform release gate (${{ matrix.os }})
+    if: github.repository == 'GoldenZqqq/Tokember'
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run repository release gate
+        run: npm run verify
+
+      - name: Install Chromium on Windows
+        if: runner.os == 'Windows'
+        run: npx playwright install chromium
+
+      - name: Run Chromium E2E on Windows
+        if: runner.os == 'Windows'
+        run: npm run test:e2e
+
+      - name: Upload Windows E2E diagnostics
+        if: runner.os == 'Windows' && failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-e2e-diagnostics-${{ github.run_attempt }}
+          path: |
+            playwright-report/
+            test-results/
+          if-no-files-found: ignore
+
   package-collector:
     name: Package collector
+    needs: platform-release-gate
+    if: >
+      github.repository == 'GoldenZqqq/Tokember'
+      && (startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -68,11 +115,24 @@ jobs:
 
   package-images:
     name: Server images (amd64 + arm64)
+    needs: platform-release-gate
+    if: >
+      github.repository == 'GoldenZqqq/Tokember'
+      && (startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
 
       - uses: docker/setup-qemu-action@v3
         with:
@@ -190,7 +250,11 @@ jobs:
     name: Publish GitHub Release
     needs: [package-collector, package-images]
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+    if: >
+      github.repository == 'GoldenZqqq/Tokember'
+      && (startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch')
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
 
@@ -244,7 +308,7 @@ jobs:
 
             ### Collector
             Multi-platform pack (`tokember-collector-*-node22.{tar.gz,zip}`).
-            Requires **Node.js ≥ 22**.
+            Requires **Node.js 22.x** (`>=22 <23`). Node 24 is not currently certified.
 
             ```bash
             # after extracting

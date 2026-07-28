@@ -33,6 +33,8 @@ export interface ModelAggregateRow {
   real_total_tokens: number
   input_tokens: number
   output_tokens: number
+  cache_read_tokens: number
+  cache_creation_tokens: number
   unpriced_requests: number
 }
 
@@ -57,6 +59,8 @@ export function mergeByModelFamily(rows: ModelAggregateRow[]): ModelFamilyRow[] 
         real_total_tokens: row.real_total_tokens,
         input_tokens: row.input_tokens,
         output_tokens: row.output_tokens,
+        cache_read_tokens: row.cache_read_tokens,
+        cache_creation_tokens: row.cache_creation_tokens,
         unpriced_requests: row.unpriced_requests,
         raw_models: [row.model],
       })
@@ -67,6 +71,8 @@ export function mergeByModelFamily(rows: ModelAggregateRow[]): ModelFamilyRow[] 
     existing.real_total_tokens += row.real_total_tokens
     existing.input_tokens += row.input_tokens
     existing.output_tokens += row.output_tokens
+    existing.cache_read_tokens += row.cache_read_tokens
+    existing.cache_creation_tokens += row.cache_creation_tokens
     existing.unpriced_requests += row.unpriced_requests
     if (!existing.raw_models.includes(row.model)) {
       existing.raw_models.push(row.model)

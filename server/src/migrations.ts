@@ -181,6 +181,25 @@ function ensurePricingRulesSchema(db: DatabaseType): void {
   createPricingRuleIndexes(db)
 }
 
+/**
+ * Ownership columns for the built-in pricing catalog.
+ *
+ * `origin` defaults to `user` on purpose: every rule that already exists was
+ * entered by an operator, and some carry hand-tuned gateway prices. Treating
+ * them as user-owned keeps the catalog sync from overwriting real money values.
+ */
+function ensurePricingOwnershipColumns(db: DatabaseType): void {
+  const columns = [
+    ['origin', "TEXT NOT NULL DEFAULT 'user' CHECK(origin IN ('builtin', 'user'))"],
+    ['user_modified', 'INTEGER NOT NULL DEFAULT 0 CHECK(user_modified IN (0, 1))'],
+  ]
+  for (const [name, definition] of columns) {
+    if (!hasColumn(db, 'pricing_rules', name)) {
+      db.exec(`ALTER TABLE pricing_rules ADD COLUMN ${name} ${definition}`)
+    }
+  }
+}
+
 function ensureModelAliasesSchema(db: DatabaseType): void {
   db.exec(`
     CREATE TABLE IF NOT EXISTS model_aliases (
@@ -467,6 +486,7 @@ export const SCHEMA_MIGRATIONS: readonly SchemaMigration[] = [
   { version: 9, name: 'project-session-attribution', up: ensureUsageAttributionSchema },
   { version: 10, name: 'device-machine-metadata', up: ensureDeviceMachineMetadata },
   { version: 11, name: 'collector-telemetry-retention', up: ensureCollectorTelemetryRetentionSchema },
+  { version: 12, name: 'pricing-catalog-origin', up: ensurePricingOwnershipColumns },
 ]
 
 export const LATEST_SCHEMA_VERSION = SCHEMA_MIGRATIONS.at(-1)?.version ?? 0

@@ -7,9 +7,13 @@ tools are listed honestly rather than implied.
 
 | Component | Requirement |
 |-----------|-------------|
-| Node.js | **≥ 22** (collector + server tooling) |
+| Node.js | **22.x** (`>=22 <23`; collector + server tooling) |
 | Python | **3.12+** only if you run Hermes companion scripts |
 | SQLite | Bundled via `better-sqlite3` in Server images |
+
+Node 24 is not currently certified because the Windows default-worker browser
+gate is not stable there. Tokember rejects other Node majors before typecheck;
+select Node 22 and rerun `npm ci` so native dependencies match its ABI.
 
 ## Operating systems (Collector installers)
 
@@ -18,6 +22,9 @@ tools are listed honestly rather than implied.
 | Windows 10+ | Task Scheduler (`tokember-collector`) | `node install.mjs install` |
 | macOS 12+ | launchd user agent | same |
 | Linux (systemd user) | `tokember-collector.timer` | same |
+
+The public Release workflow verifies installer dry-runs on real Windows, macOS,
+and Linux runners every week and before tag/manual packaging.
 
 Upgrade without losing local env/state:
 

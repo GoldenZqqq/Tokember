@@ -24,7 +24,8 @@ test('public decoders accept current stats and ignore extra device fields', () =
     byProvider: [{ ...aggregate, provider: 'codex', tokens: 2 }],
     byModel: [{
       ...aggregate, model: 'gpt', provider: 'codex', tokens: 2,
-      input_tokens: 1, output_tokens: 1, unpriced_calls: 0,
+      input_tokens: 1, output_tokens: 1,
+      cache_read_tokens: 0, cache_creation_tokens: 0, unpriced_calls: 0,
     }],
     byDevice: [{ ...aggregate, device: 'd1', provider: 'codex' }],
     attribution: [{ ...aggregate, status: 'captured', records: 1 }],
@@ -40,10 +41,36 @@ test('public decoders accept current stats and ignore extra device fields', () =
     }],
   })
   assert.equal(stats.totals.total_calls, 1)
+  assert.equal(stats.byModel[0]?.cache_read_tokens, 0)
+  assert.equal(stats.byModel[0]?.cache_creation_tokens, 0)
   assert.equal(stats.projectOptions[0]?.name, 'Project')
   assert.deepEqual(decodeDeviceOptions([{ id: 'd1', name: 'Device', extra: true }]), [
     { id: 'd1', name: 'Device' },
   ])
+})
+
+test('public decoders reject model rows that omit cache counters', () => {
+  assert.throws(() => decodeStatsResponse({
+    snapshot: {
+      since: '2026-07-17T00:00:00.000Z', until: '2026-07-18T00:00:00.000Z',
+      timezone_offset: -480, max_record_id: 1,
+    },
+    totals: {
+      total_calls: 1, total_input: 1, total_output: 1, total_cache_read: 0,
+      total_cache_creation: 0, real_total_tokens: 2, total_cost: 3,
+      pricing_coverage: coverage,
+    },
+    byProvider: [{ ...aggregate, provider: 'codex', tokens: 2 }],
+    byModel: [{
+      ...aggregate, model: 'gpt', provider: 'codex', tokens: 2,
+      input_tokens: 1, output_tokens: 1, unpriced_calls: 0,
+    }],
+    byDevice: [{ ...aggregate, device: 'd1', provider: 'codex' }],
+    daily: [{
+      ...aggregate, date: '2026-07-17', tokens: 2, input_tokens: 1, output_tokens: 1,
+      since: '2026-07-17T00:00:00.000Z', until: '2026-07-18T00:00:00.000Z',
+    }],
+  }))
 })
 
 test('public decoders reject partial stats rather than inventing zeros', () => {

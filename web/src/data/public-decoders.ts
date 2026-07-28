@@ -57,7 +57,10 @@ function model(value: unknown): ModelStatsRow {
   return {
     ...aggregate(row), model: stringValue(row.model), provider: stringValue(row.provider),
     tokens: numberValue(row.tokens), input_tokens: numberValue(row.input_tokens),
-    output_tokens: numberValue(row.output_tokens), unpriced_calls: numberValue(row.unpriced_calls),
+    output_tokens: numberValue(row.output_tokens),
+    cache_read_tokens: numberValue(row.cache_read_tokens),
+    cache_creation_tokens: numberValue(row.cache_creation_tokens),
+    unpriced_calls: numberValue(row.unpriced_calls),
   }
 }
 
