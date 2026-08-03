@@ -17,12 +17,7 @@ export function modelFamilyKey(model: string): string {
 
 /** User-facing label for a raw model or family key. */
 export function modelDisplayName(model: string): string {
-  const family = modelFamilyKey(model)
-  if (/^grok[-_]?/i.test(family)) {
-    const rest = family.replace(/^grok[-_]?/i, '').replace(/[-_]+/g, ' ').trim()
-    return rest ? `Grok ${rest}` : 'Grok'
-  }
-  return family
+  return modelFamilyKey(model).toLowerCase()
 }
 
 export interface ModelAggregateRow {

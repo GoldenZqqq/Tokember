@@ -30,7 +30,6 @@ export function ModelTable({
     <div className="rounded-xl border border-zinc-800/50 bg-zinc-900/50 overflow-hidden">
       <div className="p-4 border-b border-zinc-800/50">
         <h2 className="text-sm font-medium text-zinc-400">{t('modelTable.title')}</h2>
-        <p className="mt-1 text-xs text-zinc-600">{t('modelTable.subtitle')}</p>
       </div>
       <div className="overflow-x-auto">
         {/* Fixed mobile widths keep cost visible; cache/total explain Claude-style ledgers. */}

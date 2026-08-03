@@ -27,10 +27,13 @@ test('modelFamilyKey strips Claude thinking mode suffix', () => {
   assert.equal(modelFamilyKey('thinking-model'), 'thinking-model')
 })
 
-test('modelDisplayName prettifies Grok families only', () => {
-  assert.equal(modelDisplayName('grok-4.5'), 'Grok 4.5')
-  assert.equal(modelDisplayName('grok-4.5-build-free'), 'Grok 4.5')
+test('modelDisplayName lowercases display labels without changing identity keys', () => {
+  assert.equal(modelDisplayName('grok-4.5'), 'grok-4.5')
+  assert.equal(modelDisplayName('grok-4.5-build-free'), 'grok-4.5')
+  assert.equal(modelDisplayName('GLM-5.2'), 'glm-5.2')
+  assert.equal(modelDisplayName('DeepSeek-V4-Pro'), 'deepseek-v4-pro')
   assert.equal(modelDisplayName('gpt-5.6-sol'), 'gpt-5.6-sol')
+  assert.equal(modelFamilyKey('DeepSeek-V4-Pro'), 'DeepSeek-V4-Pro')
 })
 
 function row(
@@ -138,7 +141,7 @@ test('ModelTable shows family display names after merge', () => {
     }),
   ])
   const html = renderToStaticMarkup(withLocale(createElement(ModelTable, { data: rows })))
-  assert.match(html, /Grok 4\.5/)
+  assert.match(html, /grok-4\.5/)
   assert.doesNotMatch(html, /build-free/)
   assert.match(html, /\$6\.000/)
 })
@@ -159,6 +162,20 @@ test('ModelTable keeps model names readable on narrow viewports', () => {
   assert.match(html, /whitespace-nowrap/)
   assert.doesNotMatch(html, /break-all/)
   assert.doesNotMatch(html, /Grouped by model family/)
+})
+
+test('ModelTable hides the metric subtitle and only lowercases the visible model label', () => {
+  const html = renderToStaticMarkup(withLocale(createElement(ModelTable, {
+    data: [
+      row({
+        model: 'DeepSeek-V4-Pro', provider: 'claude', cost: 1, requests: 1,
+        real_total_tokens: 2, input_tokens: 1, output_tokens: 1,
+      }),
+    ],
+  })))
+  assert.match(html, />deepseek-v4-pro</)
+  assert.match(html, /title="DeepSeek-V4-Pro"/)
+  assert.doesNotMatch(html, /Input is non-cache prompt tokens/)
 })
 
 test('ModelTable source column uses tool display names not internal IDs', () => {
@@ -206,5 +223,5 @@ test('ModelTable shows cache and real total so prompt-cache is not invisible', (
   assert.match(html, /4\.8M/) // 4.41M read + 0.38M write
   assert.match(html, /107\.7K/)
   assert.match(html, /5\.7M/)
-  assert.match(html, /Input is non-cache prompt tokens/)
+  assert.match(html, /Non-cache input tokens from the source/)
 })

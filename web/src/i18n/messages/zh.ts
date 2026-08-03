@@ -93,7 +93,6 @@ export const zh: EnMessages = {
   },
   modelTable: {
     title: '模型明细',
-    subtitle: '「输入」是非缓存 prompt；缓存与总量才包含 prompt cache 流量。',
     model: '模型',
     source: '来源',
     cost: '花费',
