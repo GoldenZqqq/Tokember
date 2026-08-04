@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "source_commit": "51654b721f1e129a69bf476609cb41d001f10e42",
+  "source_commit": "9f59248f7883bbb72f49897ae1572bb6512fef28",
   "file_count": 360,
   "files": [
     {
@@ -1165,7 +1165,7 @@
     },
     {
       "path": "web/src/components/ModelTable.tsx",
-      "sha256": "133d317f8f41692d2614913b658ff95584daafb29fb2f1ca28b8788961e50e9f"
+      "sha256": "5129ef11cf3fe29d3fce57debed15e21737c2fbfff3578b602ad896685e5fcd0"
     },
     {
       "path": "web/src/components/Overview.tsx",
@@ -1349,7 +1349,7 @@
     },
     {
       "path": "web/src/i18n/i18n.test.ts",
-      "sha256": "6531286b3871cf115681554a083dba69d0190d23bb9159f45f919c557cd36c9a"
+      "sha256": "e23daf20d701d4d3a746eccc0bfdcb6473117fae8a022153086ff960bd2d3c56"
     },
     {
       "path": "web/src/i18n/index.ts",
@@ -1365,7 +1365,7 @@
     },
     {
       "path": "web/src/i18n/messages/en.ts",
-      "sha256": "b52f6db4b56f9817db2303093aaee629b3654a3fb0157786aeca93d98fe3fbf4"
+      "sha256": "e1760ec1e4a7dfd1db8bd5844a6a5432322d209cfd83aac72cc70bca0ed52776"
     },
     {
       "path": "web/src/i18n/messages/index.ts",
@@ -1373,7 +1373,7 @@
     },
     {
       "path": "web/src/i18n/messages/zh.ts",
-      "sha256": "e4b79de1700664ddf0d9a0ff1666194cbe888596b85f7768413e249052ecb71e"
+      "sha256": "7c6959eee3ad82ab0a565dbc17fa3cbefddc98d1986f26ae4fc2bf5668e25dd1"
     },
     {
       "path": "web/src/i18n/preference.ts",
@@ -1397,11 +1397,11 @@
     },
     {
       "path": "web/src/model-display.test.ts",
-      "sha256": "3820724051aa8eb9e5ee4a0cdddad1b839312f72d12672546cd2dbcdde57e5c4"
+      "sha256": "7957c8ab27cd61a7ad09d3cfd165e8b998c9986db3bf219cf1a75c0e951cf1d2"
     },
     {
       "path": "web/src/model-display.ts",
-      "sha256": "b777893b4ffc81566199042e5cc425487b15e716d26502793ed1d4f2f2cf97ba"
+      "sha256": "bab50fbce4b711c43d10b8f58430e4dd6aa14f490851eb1ca1f2b8e2d2623b5d"
     },
     {
       "path": "web/src/provider-display.test.ts",

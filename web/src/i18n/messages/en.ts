@@ -92,7 +92,6 @@ export const en = {
   },
   modelTable: {
     title: 'Model breakdown',
-    subtitle: 'Input is non-cache prompt tokens. Cache and Total include prompt-cache traffic.',
     model: 'Model',
     source: 'Source',
     cost: 'Cost',
